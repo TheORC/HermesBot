@@ -77,9 +77,11 @@ class AudioPlayer:
         self._guild = ctx.guild
         self._channel = ctx.channel
         self._cog = ctx.cog
+        self._now_playing = None
         self.queue = CustomQueue()
         self.next = asyncio.Event()
         self.current = None
+
         self.bot.loop.create_task(self.player_loop())
 
     async def _get_client(self):
@@ -99,7 +101,7 @@ class AudioPlayer:
             try:
                 # Attempt to re-connect
                 await self._channel.connect()
-            except Exception():
+            except Exception:
                 # Well we tried.  Lets clean up.
                 await self._channel.send('Problem getting the audio player.'
                                          'Bye bye. ;-;')
@@ -160,7 +162,7 @@ class AudioPlayer:
             # Play the current audio stream
             client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))  # noqa
 
-            await self._channel.send(f'**Now Playing:** `{source.title}` requested by '  # noqa
+            self.__now_playing = await self._channel.send(f'**Now Playing:** `{source.title}` requested by '  # noqa
                                      f'`{source.requester}`')
 
             # Wait for the song to finish
@@ -169,6 +171,11 @@ class AudioPlayer:
             # Make sure the FFmpeg process is cleaned up.
             source.cleanup()
             self.current = None
+
+            try:
+                await self.__now_playing.delete()
+            except discord.HTTPException:
+                pass
 
     def destroy(self, guild):
         """

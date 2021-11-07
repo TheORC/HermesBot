@@ -113,7 +113,7 @@ class AudioManager:
             return await ctx.send('> Audio URL not specified. Did you mean to resume?')  # noqa
 
         # Get the channel we are playing in
-        player = self._getplayer(ctx)
+        player = self._get_player(ctx)
 
         # Get the quick YouTube information from the search provided.
         results = get_quick_info(search)
