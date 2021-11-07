@@ -14,6 +14,9 @@ class BotController(commands.Cog):
     async def _sm(self, ctx, message: str):
         await ctx.send(f'`{message}`')
 
+    async def cleanup(self, guild):
+        await self.audio_manager.cleanupplayer(guild)
+
     @commands.command(name='connect',
                       aliases=['join'],
                       help="- Call bot to your voice channel.")
