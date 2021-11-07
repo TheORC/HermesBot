@@ -1,0 +1,10 @@
+# Don't track these folders
+.git/
+music/
+__pycache__/
+
+# Don't track these files
+test.json
+storage.json
+.env
+TODO
