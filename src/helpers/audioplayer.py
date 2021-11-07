@@ -103,9 +103,6 @@ class AudioPlayer:
                 await self._channel.connect()
             except Exception:
                 # Well we tried.  Lets clean up.
-                await self._channel.send('Problem getting the audio player.'
-                                         'Bye bye. ;-;')
-
                 self.destroy(self._guild)
                 return None
         return self._guild.voice_client
@@ -184,4 +181,4 @@ class AudioPlayer:
         There might be no more songs, or something went wrong.
         """
         print('Bot recieved not new music.  Closing.')
-        return self.bot.loop.create_task(self._cog.cleanup(guild))
+        return self.bot.loop.create_task(self._cog.clean_up(guild))
