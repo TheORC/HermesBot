@@ -1,6 +1,7 @@
 # Don't track these folders
 .git/
 music/
+src/cogs/old/
 __pycache__/
 
 # Don't track these files

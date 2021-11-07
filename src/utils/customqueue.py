@@ -1,8 +1,31 @@
+# -*- coding: utf-8 -*-
+'''
+Copyright (c) 2021 Oliver Clarke.
+
+This file is part of HermesBot.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+'''
 import asyncio
 import random
 
 
 class CustomQueue(asyncio.Queue):
+    """This class creates an async queue to store music.
+    It adds additional features allowing the items to be
+    injected at the start of the queue.  Aditionaly, it
+    allows the queue to be shuffled.
+    """
 
     def __init__(self):
         super().__init__()
@@ -29,7 +52,7 @@ class CustomQueue(asyncio.Queue):
             self._putters.append(putter)
             try:
                 await putter
-            except:
+            except Exception:
                 putter.cancel()  # Just in case putter is not done yet.
                 try:
                     # Clean self._putters from canceled putters.
@@ -46,6 +69,10 @@ class CustomQueue(asyncio.Queue):
         return self.put_nowait(item, index)
 
     def shuffle_queue(self):
+        """Shuffle items in the queue.
+
+        Shuffles items in the queue using a random shuffle.
+        """
         random.shuffle(self._queue)
 
     def put_nowait(self, item, index):

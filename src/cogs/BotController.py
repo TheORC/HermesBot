@@ -1,3 +1,22 @@
+# -*- coding: utf-8 -*-
+'''
+Copyright (c) 2021 Oliver Clarke.
+
+This file is part of HermesBot.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+'''
+
 from discord.ext import commands
 from ..helpers import AudioManager
 
@@ -14,8 +33,8 @@ class BotController(commands.Cog):
     async def _sm(self, ctx, message: str):
         await ctx.send(f'`{message}`')
 
-    async def cleanup(self, guild):
-        await self.audio_manager.cleanupplayer(guild)
+    async def clean_up(self, guild):
+        await self.audio_manager.clean_up_player(guild)
 
     @commands.command(name='connect',
                       aliases=['join'],
@@ -25,7 +44,7 @@ class BotController(commands.Cog):
         try:
             channel = ctx.author.voice.channel
         except AttributeError:
-            return await self._sm(ctx, 'You must be in a channel to summon the bot.')
+            return await self._sm(ctx, 'You must be in a channel to summon the bot.')  # noqa
 
         vc = ctx.voice_client
 
@@ -35,12 +54,12 @@ class BotController(commands.Cog):
             try:
                 await vc.move_to(channel)
             except asyncio.TimeoutError:
-                return await self._sm(ctx, f'Moving to channel: <{channel}> timed out.')
+                return await self._sm(ctx, f'Moving to channel: <{channel}> timed out.')  # noqa
         else:
             try:
                 await channel.connect()
             except asyncio.TimeoutError:
-                return await self._sm(ctx, f'Connecting to channel: <{channel}> timed out.')
+                return await self._sm(ctx, f'Connecting to channel: <{channel}> timed out.')  # noqa
 
         await self._sm(ctx, f'Connected to: **{channel}**')
 
@@ -51,8 +70,7 @@ class BotController(commands.Cog):
         vc = ctx.guild.voice_client
         if(not vc or not vc.is_connected()):
             return await self._sm(ctx, 'The bot is not connected to a channel')
-
-        await self.audio_manager.cleanupplayer(ctx.guild)
+        await self.clean_up(ctx.guild)
 
     @commands.command(
         name="play",
@@ -111,13 +129,13 @@ class BotController(commands.Cog):
                       aliases=['q', 'playlist'],
                       help="- Shows the current music queue.")
     async def play_queue(self, ctx):
-        await self.audio_manager.displayqueue(ctx)
+        await self.audio_manager.display_playing_queue(ctx)
 
     @commands.command(name='playing',
                       aliases=['now', 'current', 'np'],
                       help="- Display the title of the song playing.")
     async def play_current(self, ctx):
-        await self.audio_manager.displayplaying(ctx)
+        await self.audio_manager.show_song_playing(ctx)
 
     @commands.command(name='shuffle', aliases=['sh'],
                       help="- Shuffles the current song queue.")

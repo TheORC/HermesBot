@@ -1,40 +1,42 @@
-# Source : https://gist.github.com/EvieePy/ab667b74e9758433b3eb806c53a19f34
+# -*- coding: utf-8 -*-
+'''
+Copyright (c) 2021 Oliver Clarke.
+
+This file is part of HermesBot.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+
+This file makes use of code found at the following address.
+Source : https://gist.github.com/EvieePy/ab667b74e9758433b3eb806c53a19f34
+'''
 
 from async_timeout import timeout
 from functools import partial
-from .CustomQueue import CustomQueue
+from ..utils import CustomQueue, get_full_info
 
 import asyncio
 import discord
 
-from youtube_dl import YoutubeDL
-
-ytdlopts = {
-    'format': 'bestaudio/best',
-    'restrictfilenames': True,
-    'noplaylist': True,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0'  # ipv6 addresses cause issues sometimes
-}
-
-ytdl = YoutubeDL(ytdlopts)
-
-
-class YTDLError(Exception):
-    pass
-
 
 class YTDLSource(discord.PCMVolumeTransformer):
+    """
+    This class creates a live stream AudioSource.
 
-    FFMPEG_OPTIONS = {
-        'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-        'options': '-vn',
-    }
+    Using a source url or search, this creates an
+    audio source with the discord voice client can
+    stream.
+    """
 
     def __init__(self, source, *, data, requester):
         super().__init__(source)
@@ -50,15 +52,25 @@ class YTDLSource(discord.PCMVolumeTransformer):
         """Used for preparing a stream, instead of downloading.
         Since Youtube Streaming links expire."""
         loop = loop or asyncio.get_event_loop()
-        requester = data['ctx'].author
+        author = data['ctx'].author
 
-        to_run = partial(ytdl.extract_info,
-                         url=data['search'], download=False)
+        # Create a request to youtube and get the response
+        to_run = partial(get_full_info, url=data['search'])
         data = await loop.run_in_executor(None, to_run)
-        return cls(discord.FFmpegPCMAudio(data['url']), data=data, requester=requester)
+
+        # Create and retunr a new YTDLSource object
+        return cls(discord.FFmpegPCMAudio(data['url']), data=data, requester=author)  # noqa
 
 
 class AudioPlayer:
+    """
+    Class responsible for playing song in a discord channel.
+
+    The `AudioPlayer()` uses a loop which waits for a new
+    song to be in the queue.  It will then attempt to play the
+    song.  In the event of a failure, it will either skip to
+    the next song, or discconect.
+    """
 
     def __init__(self, ctx):
         self.bot = ctx.bot
@@ -70,26 +82,54 @@ class AudioPlayer:
         self.current = None
         self.bot.loop.create_task(self.player_loop())
 
-    async def _getclient(self):
-        """Get the current audio client for this bot"""
-        if(self._guild.voice_client is None):  # Check to see if the voice client exists
+    async def _get_client(self):
+        """
+        Get the current audio client.
+
+        If the `voice_client` does not exsist then bad
+        things have happened.  The method attempts to
+        re-connect to the channel, however, it is likely
+        the internet of the machine running this has
+        disconnected.
+
+        :return: Guild voice_client | None
+        """
+        # Check to see if the voice client exists
+        if(self._guild.voice_client is None):
             try:
+                # Attempt to re-connect
                 await self._channel.connect()
-            except (asyncio.TimeoutError, AttributeError):
-                await self._channel.send(f'Problem getting the audio player.  Bye bye. ;-;')
+            except Exception():
+                # Well we tried.  Lets clean up.
+                await self._channel.send('Problem getting the audio player.'
+                                         'Bye bye. ;-;')
+
                 self.destroy(self._guild)
                 return None
         return self._guild.voice_client
 
     async def player_loop(self):
+        """
+        The music bot loop controlling songs.
+
+        This method contains a loop which waits for songs to appear
+        in the `queue`.  When it receieves one, it attempts to play
+        the song in the voice channel.
+
+        If a song is not received in `300` seconds, the loop is
+        terminated and the bot disconected from the voice channel.
+        """
+
         await self.bot.wait_until_ready()
 
+        # Lets loop for as loong as the bot exsists
         while not self.bot.is_closed():
 
             self.next.clear()
 
             try:
-                # Wait for the next song. If we timeout cancel the player and disconnect...
+                # Wait for the next song. If we timeout,
+                # cancel the player and disconnect...
                 async with timeout(300):  # 5 minutes...
                     source = await self.queue.get()
             except asyncio.TimeoutError:
@@ -97,23 +137,33 @@ class AudioPlayer:
                 return self.destroy(self._guild)
 
             try:
-                source = await YTDLSource.regather_stream(source, loop=self.bot.loop)
+                # Attempt to create the music audio stream.
+                source = await YTDLSource.regather_stream(source, loop=self.bot.loop)  # noqa
             except Exception as e:
-                await self._channel.send(f'There was an error processing your song.\n'
+
+                # Handle errors retreving the music stream.
+                # We dont want to end the bot, so simply alert
+                # the channel and try the next song.
+                await self._channel.send(f'There was an error processing your song.\n'  # noqa
                                          f'```css\n[{e}]\n```')
                 continue
 
+            # Store the current song being played
             self.current = source
-            client = await self._getclient()
+            client = await self._get_client()
 
+            # If the client does not exsist then it is
+            # already being destroyed.  Do nothing.
             if(client is None):
                 continue
 
-            client.play(
-                source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
+            # Play the current audio stream
+            client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))  # noqa
 
-            await self._channel.send(f'**Now Playing:** `{source.title}` requested by '
+            await self._channel.send(f'**Now Playing:** `{source.title}` requested by '  # noqa
                                      f'`{source.requester}`')
+
+            # Wait for the song to finish
             await self.next.wait()
 
             # Make sure the FFmpeg process is cleaned up.
@@ -121,5 +171,10 @@ class AudioPlayer:
             self.current = None
 
     def destroy(self, guild):
+        """
+        Destory this `AudioPlayer()`
+
+        There might be no more songs, or something went wrong.
+        """
         print('Bot recieved not new music.  Closing.')
         return self.bot.loop.create_task(self._cog.cleanup(guild))
