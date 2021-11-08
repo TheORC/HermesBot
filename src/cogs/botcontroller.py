@@ -28,13 +28,13 @@ class BotController(commands.Cog):
     def __init__(self, bot):
         """Initialize important information."""
         self.bot = bot
-        self.audio_manager = AudioManager()
+        self.audio_manager = AudioManager(bot)
 
     async def _sm(self, ctx, message: str):
         await ctx.send(f'`{message}`')
 
-    async def clean_up(self, guild):
-        await self.audio_manager.clean_up_player(guild)
+    async def handle_disconnection(self, guild):
+        await self.audio_manager.clear_audio_player(guild)
 
     @commands.command(name='connect',
                       aliases=['join'],
@@ -48,8 +48,10 @@ class BotController(commands.Cog):
 
         vc = ctx.voice_client
 
+        # Check if the vc already exists
         if(vc):
             if(vc.channel.id == channel.id):
+                print('vc already in the channel do nothing.')
                 return
             try:
                 await vc.move_to(channel)
@@ -67,27 +69,33 @@ class BotController(commands.Cog):
                       aliases=['leave', 'go', 'goaway', 'go-away', 'stop'],
                       help="- Ask the bot to leave the voice channel.")
     async def player_disconnect(self, ctx):
-        vc = ctx.guild.voice_client
+        vc = ctx.voice_client
+
         if(not vc or not vc.is_connected()):
             return await self._sm(ctx, 'The bot is not connected to a channel')
-        await self.clean_up(ctx.guild)
+
+        await vc.disconnect()  # self.clean_up(ctx.guild)
 
     @commands.command(
         name="play",
         help="- <url:string | search:string> : Adds a song to the queue."
     )
     async def play_song(self, ctx, *, search=None):
+
+        # In some cases the bot may have been disconnected
+        # manualy.  If this is the case, then the voice_client
+        # exsists but is not conected.  Lets handle that now.
         vc = ctx.voice_client
-        if (not vc):
+        if (not vc or not ctx.voice_client.is_connected()):
             await ctx.invoke(self.player_connect)
 
         vc = ctx.voice_client
         if(not vc):
+            print('There is something wrong with the voice client')
             return
 
         if(search is None):
-            await ctx.invoke(self.resume_song)
-            return
+            return await ctx.invoke(self.resume_song)
 
         await self.audio_manager.play(ctx, search)
 

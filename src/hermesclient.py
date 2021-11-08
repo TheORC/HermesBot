@@ -47,3 +47,13 @@ class HermesClient(commands.Bot):
                 except Exception as e:
                     exception = f"{type(e).__name__}: {e}"
                     print(f"Failed to load extension {extension}\n{exception}")  # noqa
+
+    async def on_voice_state_update(self, member, before, after):
+        """
+        Handle a forced disconnect.
+
+        """
+        if(before.channel is not None and after.channel is None):
+            if(member.bot):
+                audio_manager = self.get_cog('BotController')
+                await audio_manager.handle_disconnection(member.guild)

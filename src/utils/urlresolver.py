@@ -46,3 +46,28 @@ def get_full_info(url):
     This request processes the url or search.
     """
     return ytdl.extract_info(url, download=False, process=True)
+
+
+def resolve_video_urls(list):
+    """
+    Resolve video information from a list of urls.
+    This uses you `YoutubeDL.extract_info()` to retrieve
+    video information.
+
+    :param list: The list of urls to resolve
+    :return: List of resolved urls
+    """
+    results = []
+    for item in list:
+        res = get_full_info(item['search'])  # Perform the search
+
+        # Handle cases where a list is returned
+        if('entries' in res):
+            en_list = list(res.get('entries'))
+            if(len(en_list) >= 1):
+                res = res.get('entries')[0]
+            else:
+                res = {'title': 'None'}
+
+        results.append(res)
+    return results

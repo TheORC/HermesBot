@@ -73,6 +73,7 @@ class AudioPlayer:
     """
 
     def __init__(self, ctx):
+        self.ctx = ctx
         self.bot = ctx.bot
         self._guild = ctx.guild
         self._channel = ctx.channel
@@ -82,29 +83,21 @@ class AudioPlayer:
         self.next = asyncio.Event()
         self.current = None
 
-        self.bot.loop.create_task(self.player_loop())
+        self.audio_player = self.bot.loop.create_task(self.player_loop())
 
     async def _get_client(self):
         """
         Get the current audio client.
 
         If the `voice_client` does not exsist then bad
-        things have happened.  The method attempts to
-        re-connect to the channel, however, it is likely
-        the internet of the machine running this has
-        disconnected.
+        things have happened. It is likely the internet
+        of the machine running this has disconnected.
 
         :return: Guild voice_client | None
         """
         # Check to see if the voice client exists
-        if(self._guild.voice_client is None):
-            try:
-                # Attempt to re-connect
-                await self._channel.connect()
-            except Exception:
-                # Well we tried.  Lets clean up.
-                self.destroy(self._guild)
-                return None
+        if(not self._guild.voice_client):
+            return None
         return self._guild.voice_client
 
     async def player_loop(self):
@@ -124,55 +117,58 @@ class AudioPlayer:
         # Lets loop for as loong as the bot exsists
         while not self.bot.is_closed():
 
-            self.next.clear()
-
             try:
-                # Wait for the next song. If we timeout,
-                # cancel the player and disconnect...
-                async with timeout(300):  # 5 minutes...
-                    source = await self.queue.get()
-            except asyncio.TimeoutError:
-                print('Bot disconnecting due to no new song requests.')
-                return self.destroy(self._guild)
+                self.next.clear()
 
-            try:
-                # Attempt to create the music audio stream.
-                source = await YTDLSource.regather_stream(source, loop=self.bot.loop)  # noqa
-            except Exception as e:
+                try:
+                    # Wait for the next song. If we timeout,
+                    # cancel the player and disconnect...
+                    async with timeout(300):  # 5 minutes...
+                        source = await self.queue.get()
+                except asyncio.TimeoutError:
+                    print('Bot disconnecting due to no new song requests.')
+                    return self.destroy(self._guild)
 
-                # Handle errors retreving the music stream.
-                # We dont want to end the bot, so simply alert
-                # the channel and try the next song.
-                await self._channel.send(f'There was an error processing your song.\n'  # noqa
-                                         f'```css\n[{e}]\n```')
-                continue
+                try:
+                    # Attempt to create the music audio stream.
+                    source = await YTDLSource.regather_stream(source, loop=self.bot.loop)  # noqa
+                except Exception as e:
 
-            # Store the current song being played
-            self.current = source
-            client = await self._get_client()
+                    # Handle errors retreving the music stream.
+                    # We dont want to end the bot, so simply alert
+                    # the channel and try the next song.
+                    await self._channel.send(f'There was an error processing your song.\n'  # noqa
+                                             f'```css\n[{e}]\n```')
+                    continue
 
-            # If the client does not exsist then it is
-            # already being destroyed.  Do nothing.
-            if(client is None):
-                continue
+                # Store the current song being played
+                self.current = source
+                client = await self._get_client()
 
-            # Play the current audio stream
-            client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))  # noqa
+                # We need to make sure the client exists before using it
+                if(client):
+                    # Play the current audio stream
+                    client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))  # noqa
 
-            self.__now_playing = await self._channel.send(f'**Now Playing:** `{source.title}` requested by '  # noqa
-                                     f'`{source.requester}`')
+                    self._now_playing = await self._channel.send(f'**Now Playing:** `{source.title}` requested by '  # noqa
+                                             f'`{source.requester}`')
 
-            # Wait for the song to finish
-            await self.next.wait()
+                    # Wait for the song to finish
+                    await self.next.wait()
+                else:
+                    await self._channel.send(f'The bot met some resistance playing the song '  # noqa
+                                             f'`{source.title}`')
 
-            # Make sure the FFmpeg process is cleaned up.
-            source.cleanup()
-            self.current = None
+                # Make sure the FFmpeg process is cleaned up.
+                source.cleanup()
+                self.current = None
 
-            try:
-                await self.__now_playing.delete()
-            except discord.HTTPException:
-                pass
+                try:
+                    await self._now_playing.delete()
+                except discord.HTTPException:
+                    pass
+            except asyncio.CancelledError as error:
+                print(f'(Cancel Error): {error}')
 
     def destroy(self, guild):
         """
@@ -180,5 +176,4 @@ class AudioPlayer:
 
         There might be no more songs, or something went wrong.
         """
-        print('Bot recieved not new music.  Closing.')
-        return self.bot.loop.create_task(self._cog.clean_up(guild))
+        return self.bot.loop.create_task(self._cog.handle_disconnection(guild))

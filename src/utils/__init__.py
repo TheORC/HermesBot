@@ -17,6 +17,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 from .customqueue import CustomQueue
-from .urlresolver import get_quick_info
-from .urlresolver import get_full_info
-__all__ = ['CustomQueue', 'get_quick_info', 'get_full_info']
+from .urlresolver import (get_quick_info,
+                          get_full_info,
+                          resolve_video_urls)
+__all__ = ['CustomQueue', 'get_quick_info',
+           'get_full_info', 'resolve_video_urls']

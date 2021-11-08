@@ -18,7 +18,7 @@ limitations under the License.
 '''
 
 from .audioplayer import AudioPlayer
-from ..utils import get_full_info, get_quick_info
+from ..utils import (get_full_info, get_quick_info, resolve_video_urls)
 
 import itertools
 import discord
@@ -32,32 +32,9 @@ class AudioManager:
     to process commands and execute them.
     """
 
-    def __init__(self):
+    def __init__(self, bot):
+        self.bot = bot
         self.players = {}
-
-    def _resolve_video_urls(self, list):
-        """
-        Resolve video information from a list of urls.
-        This uses you `YoutubeDL.extract_info()` to retrieve
-        video information.
-
-        :param list: The list of urls to resolve
-        :return: List of resolved urls
-        """
-        results = []
-        for item in list:
-            res = get_full_info(item['search'])  # Perform the search
-
-            # Handle cases where a list is returned
-            if('entries' in res):
-                en_list = list(res.get('entries'))
-                if(len(en_list) >= 1):
-                    res = res.get('entries')[0]
-                else:
-                    res = {'title': 'None'}
-
-            results.append(res)
-        return results
 
     def _get_player(self, ctx):
         """
@@ -68,12 +45,14 @@ class AudioManager:
         """
         try:
             player = self.players[ctx.guild.id]
+            print('Using an existing player')
         except KeyError:
+            print('Creating a new player.')
             player = AudioPlayer(ctx)
             self.players[ctx.guild.id] = player
         return player
 
-    async def clean_up_player(self, guild):
+    async def clear_audio_player(self, guild):
         """
         Properly dispose of an `AudioPlayer()` when it is
         no longer needed.
@@ -81,14 +60,14 @@ class AudioManager:
         :param guild: guild which is removing `AudioPlayer()`
         """
         try:
-            # Try and discconect the voice_client
             await guild.voice_client.disconnect()
         except AttributeError:
             pass
 
         try:
             # Free up memory
-            del self.players[guild]
+            self.players[guild.id].audio_player.cancel()
+            del self.players[guild.id]
         except KeyError:
             pass
 
@@ -257,7 +236,7 @@ class AudioManager:
         # Get infomration about the upcoming songs.  At the moment
         # I am only intrested in titles, however, this could be
         # expanded to other things such as the video author.
-        songs = self._resolve_video_urls(upcoming)
+        songs = resolve_video_urls(upcoming)
 
         fmt = '\n'.join(f'**`{_["title"]}`**' for _ in songs)
         embed = discord.Embed(
