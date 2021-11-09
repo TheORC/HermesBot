@@ -147,6 +147,13 @@ class AudioPlayer:
 
                 # We need to make sure the client exists before using it
                 if(client):
+
+                    # If this is true, then chances are we
+                    # disconnected from the internet
+                    if(not client.is_connected()):
+                        print('The client is not connected.  Just clean up...')
+                        return self.destroy(self._guild)
+
                     # Play the current audio stream
                     client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))  # noqa
 

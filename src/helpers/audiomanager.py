@@ -42,7 +42,12 @@ class AudioManager:
         does not exsist, a new one is created.
 
         :return: `AudioPlayer()`
+
         """
+
+        # TODO: check if player clean up is working properly
+        print(self.players)  # DEBUG
+
         try:
             player = self.players[ctx.guild.id]
             print('Using an existing player')
