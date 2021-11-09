@@ -154,8 +154,10 @@ class BotController(commands.Cog):
     async def clear_queue(self, ctx):
         await self.audio_manager.clear_queue(ctx)
 
-
-        pass
+    @commands.command(name='volume', aliases=['vol'],
+                      help='- <[1-100]: int> Sets the volume.')
+    async def set_volume(self, ctx, volume: float):
+        await self.audio_manager.set_volume(ctx, volume)
 
 
 def setup(bot):

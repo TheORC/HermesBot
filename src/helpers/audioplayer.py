@@ -83,6 +83,8 @@ class AudioPlayer:
         self.next = asyncio.Event()
         self.current = None
 
+        self.volume = .05  # 5% seams like a nice starting point.
+
         self.audio_player = self.bot.loop.create_task(self.player_loop())
 
     async def _get_client(self):
@@ -143,6 +145,7 @@ class AudioPlayer:
 
                 # Store the current song being played
                 self.current = source
+                self.current.volume = self.volume
                 client = await self._get_client()
 
                 # We need to make sure the client exists before using it

@@ -277,6 +277,36 @@ class AudioManager:
         """
         Clear the queue of songs
         """
+
+        vc = ctx.voice_client
+
+        if(not vc or not vc.is_connected()):
+            return await ctx.send('> The bot is not currently in a voice channel.')
+
         player = self._get_player(ctx)
-        if(player):  # Check to see if there even is a queue
-            player.queue.clear()
+
+        if(player.queue.empty()):
+            return await ctx.send('> There are no songs in queue.')
+
+        player.queue.clear_queue()
+        await ctx.send(f'> The queue has been cleared by **{ctx.author}**')
+
+    async def set_volume(self, ctx, volume: float):
+
+        vc = ctx.voice_client
+
+        if(not vc or not vc.is_connected()):
+            return await ctx.send('> The bot is not currently in a voice channel.')  # noqa
+
+        if(not 0 < volume <= 100):
+            return await ctx.send('> Please enter a value between 1 and 100')
+
+        player = self._get_player(ctx)
+
+        # If we are playing a song at the moment,
+        # we should also change the voluem.
+        if(vc.source):
+            vc.source.volume = volume / 100
+
+        player.volume = volume / 100
+        await ctx.send(f'> Volume set to **{volume}%**')
