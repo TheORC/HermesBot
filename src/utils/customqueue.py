@@ -29,6 +29,7 @@ class CustomQueue(asyncio.Queue):
 
     def __init__(self):
         super().__init__()
+        self.clear_queue()
 
     def _put(self, item, index):
         if(index == -1):
@@ -86,3 +87,7 @@ class CustomQueue(asyncio.Queue):
         self._unfinished_tasks += 1
         self._finished.clear()
         self._wakeup_next(self._getters)
+
+    def clear_queue(self):
+        """Clear the queue of any songs."""
+        self._queue.clear()  # THIS NEEDS TESTING

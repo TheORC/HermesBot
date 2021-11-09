@@ -150,6 +150,13 @@ class BotController(commands.Cog):
     async def shuffle(self, ctx):
         await self.audio_manager.shuffle(ctx)
 
+    @commands.command(name='clear', help='- Clear the current queue of songs.')
+    async def clear_queue(self, ctx):
+        await self.audio_manager.clear_queue(ctx)
+
+
+        pass
+
 
 def setup(bot):
     bot.add_cog(BotController(bot))

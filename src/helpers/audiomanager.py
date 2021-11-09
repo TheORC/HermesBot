@@ -272,3 +272,11 @@ class AudioManager:
 
         player.queue.shuffle_queue()
         await ctx.send('> Queue finished shuffling.')
+
+    async def clear_queue(self, ctx):
+        """
+        Clear the queue of songs
+        """
+        player = self._get_player(ctx)
+        if(player):  # Check to see if there even is a queue
+            player.queue.clear()
