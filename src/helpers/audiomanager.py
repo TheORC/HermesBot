@@ -281,7 +281,7 @@ class AudioManager:
         vc = ctx.voice_client
 
         if(not vc or not vc.is_connected()):
-            return await ctx.send('> The bot is not currently in a voice channel.')
+            return await ctx.send('> The bot is not currently in a voice channel.')  # noqa
 
         player = self._get_player(ctx)
 

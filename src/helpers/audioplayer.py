@@ -84,7 +84,6 @@ class AudioPlayer:
         self.current = None
 
         self.volume = .05  # 5% seams like a nice starting point.
-
         self.audio_player = self.bot.loop.create_task(self.player_loop())
 
     async def _get_client(self):

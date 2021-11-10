@@ -74,7 +74,8 @@ class BotController(commands.Cog):
         if(not vc or not vc.is_connected()):
             return await self._sm(ctx, 'The bot is not connected to a channel')
 
-        await vc.disconnect()  # self.clean_up(ctx.guild)
+        # Clean up the bot, its time for it to go.
+        await self.audio_manager.clear_audio_player(ctx)
 
     @commands.command(
         name="play",
