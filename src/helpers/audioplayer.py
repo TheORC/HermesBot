@@ -176,8 +176,9 @@ class AudioPlayer:
                     await self._now_playing.delete()
                 except discord.HTTPException:
                     pass
-            except asyncio.CancelledError as error:
-                print(f'(Cancel Error): {error}')
+            except asyncio.CancelledError:
+                print('Player loop has ended. Remove it.')
+                return self.destroy(self._guild)
 
     def destroy(self, guild):
         """

@@ -73,8 +73,8 @@ class AudioManager:
             # Free up memory
             self.players[guild.id].audio_player.cancel()
             del self.players[guild.id]
-        except KeyError:
-            pass
+        except Exception as e:
+            print(f'There was an error: {e}')
 
     """
     The following commands are used to control an AudioPlayer
