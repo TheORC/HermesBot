@@ -19,5 +19,6 @@ limitations under the License.
 
 from .audiomanager import AudioManager
 from .audioplayer import AudioPlayer
+from .databasemanager import DatabaseManager
 
-__all__ = ['AudioManager', 'AudioPlayer']
+__all__ = ['AudioManager', 'AudioPlayer', 'DatabaseManager']
