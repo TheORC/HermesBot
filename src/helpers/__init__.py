@@ -20,5 +20,6 @@ limitations under the License.
 from .audiomanager import AudioManager
 from .audioplayer import AudioPlayer
 from .databasemanager import DatabaseManager
+from .ttsmanager import TTSManager
 
-__all__ = ['AudioManager', 'AudioPlayer', 'DatabaseManager']
+__all__ = ['AudioManager', 'AudioPlayer', 'DatabaseManager', 'TTSManager']

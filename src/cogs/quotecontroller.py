@@ -1,5 +1,5 @@
 from discord.ext import commands
-from ..helpers import DatabaseManager
+from ..helpers import DatabaseManager, TTSManager
 from dotenv import load_dotenv
 
 import os
@@ -19,11 +19,24 @@ class QuoteController(commands.Cog):
         self.db_manager = DatabaseManager(db_host, db_name)
         self.db_manager.connect()
 
+        tts_path = os.getenv('TTS_PATH')
+        self.tts_manager = TTSManager(bot, self.db_manager, filepath=tts_path)
+
     def _contains_user(self, username, users):
         for user in users:
             if user[2].lower() == username.lower():
                 return user
         return None
+
+    async def _check_for_missing_tts(self, ctx, guildid):
+
+        missing = self.db_manager.get_missing_tts(guildid)
+
+        await ctx.send(f'Found {len(missing)} TTS objects.  Fixing.  This might take a while.')
+
+        for quote in missing:
+            file_name = f'{quote[0]}_{quote[2]}_{quote[1]}'
+            await self.tts_manager.quote_to_tts(quote[0], quote[3], file_name)
 
     async def _add_user(self, ctx, name):
 
@@ -127,7 +140,7 @@ class QuoteController(commands.Cog):
         name="add",
         help="- <name:string> <quote:string> : Add a new quote."
     )
-    async def add_quote(self, ctx, name, *, arg):
+    async def add_quote(self, ctx, name, *, args):
         """Says hello."""
 
         users = self.db_manager.get_users(ctx.guild.id)
@@ -142,8 +155,15 @@ class QuoteController(commands.Cog):
         # We need the guild id for a quote
         guild_id = ctx.guild.id
         try:
-            quote_id = self.db_manager.add_user_quote(user[0], guild_id, arg)
+            # Send the quote to the database
+            quote_id = self.db_manager.add_user_quote(user[0], guild_id, args)
             await ctx.send(f'Added quote with id({quote_id}) for user {user[2]}')
+
+            # Generate tts filename
+            file_name = f'{quote_id}_{guild_id}_{user[0]}'
+
+            # Create tts audio file
+            await self.tts_manager.quote_to_tts(quote_id, args, file_name)
         except Exception as e:
             print(e)
             await ctx.send(':( there was a problem adding your quote.')
@@ -168,6 +188,7 @@ class QuoteController(commands.Cog):
                 return await ctx.send('Please provide an Id.')
             return await self._get_id_quote(ctx, args)
         elif command == 'all':
+            print(f'COUNT: {self.db_manager.get_number_quotes(ctx.guild.id)}')
             return await self._get_all_quotes(ctx)
         else:
             return await ctx.send('Unknown command. Check .help for command usage')
@@ -187,6 +208,14 @@ class QuoteController(commands.Cog):
 
         self.db_manager.remove_quote(ctx.guild.id, id)
         await ctx.send('Removed quote.')
+
+    @commands.command(
+        name="fix_tts",
+        help="- Sometimes something goes wrong.  This fixes it."
+    )
+    async def fix_tts(self, ctx):
+        await self._check_for_missing_tts(ctx, ctx.guild.id)
+        await ctx.send('TTS should now be fixed.')
 
 
 def setup(bot):

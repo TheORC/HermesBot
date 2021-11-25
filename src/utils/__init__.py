@@ -17,8 +17,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 from .customqueue import CustomQueue
+from .ttsworker import GTTSWorker
 from .urlresolver import (get_quick_info,
                           get_full_info,
                           resolve_video_urls)
-__all__ = ['CustomQueue', 'get_quick_info',
+
+__all__ = ['CustomQueue', 'GTTSWorker', 'get_quick_info',
            'get_full_info', 'resolve_video_urls']

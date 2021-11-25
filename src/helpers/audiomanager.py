@@ -17,11 +17,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from .audioplayer import AudioPlayer
+from .audioplayer import AudioPlayer, FileSource
+from .databasemanager import DatabaseManager
+
 from ..utils import (get_full_info, get_quick_info, resolve_video_urls)
+from dotenv import load_dotenv
 
 import itertools
+import random
 import discord
+import os
 
 
 class AudioManager:
@@ -35,6 +40,13 @@ class AudioManager:
     def __init__(self, bot):
         self.bot = bot
         self.players = {}
+
+        load_dotenv()
+        db_host = os.getenv('DB_HOST')
+        db_name = os.getenv('DB_NAME')
+
+        self.db_manager = DatabaseManager(db_host, db_name)
+        self.db_manager.connect()
 
     def _get_player(self, ctx):
         """
@@ -56,6 +68,16 @@ class AudioManager:
             player = AudioPlayer(ctx)
             self.players[ctx.guild.id] = player
         return player
+
+    async def on_bot_join_channel(self, ctx, guild):
+        quotes = self.db_manager.get_all_quotes(guild.id)
+        id = random.randrange(0, len(quotes))
+
+        # Get the channel we are playing in
+        player = self._get_player(ctx)
+
+        # Add the random quote to the queue
+        await player.queue.put(FileSource.create_source(ctx, quotes[id][5]))
 
     async def clear_audio_player(self, guild):
         """
@@ -148,7 +170,8 @@ class AudioManager:
             items = {}
             items['ctx'] = ctx
             items['search'] = results['webpage_url']
-            await player.queue.put(items, index=play_index)
+
+            await player.queue.put(items)
 
     async def pause(self, ctx):
         """

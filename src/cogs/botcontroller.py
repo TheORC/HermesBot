@@ -63,6 +63,7 @@ class BotController(commands.Cog):
             except asyncio.TimeoutError:
                 return await self._sm(ctx, f'Connecting to channel: <{channel}> timed out.')  # noqa
 
+        await self.audio_manager.on_bot_join_channel(ctx, ctx.guild)
         await self._sm(ctx, f'Connected to: **{channel}**')
 
     @commands.command(name='disconnect',

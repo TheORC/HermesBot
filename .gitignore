@@ -3,6 +3,7 @@
 music/
 src/cogs/old/
 __pycache__/
+tts_files/
 
 # Don't track these files
 test.json

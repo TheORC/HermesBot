@@ -96,3 +96,29 @@ class DatabaseManager:
         data = (guildid, quoteid)
         self.cursor.execute(sql_delete, data)
         self.conn.commit()
+
+    def get_missing_tts(self, guildid):
+        sql = 'SELECT * FROM quotes WHERE quote_tts IS NULL AND idguild=%s'
+        data = (guildid,)
+        return self._sql_get(sql, data=data)
+
+    def get_all_quotes(self, guildid):
+        sql = 'SELECT * FROM quotes WHERE idguild=%s'
+        data = (guildid,)
+        return self._sql_get(sql, data=data)
+
+    def get_number_quotes(self, guildid):
+        sql = 'SELECT COUNT(*) from quotes WHERE idguild=%s'
+        data = (guildid,)
+        return self._sql_get(sql, data=data)[0][0]
+
+    def get_quote_tts(self, quoteid):
+        sql = 'SELECT * FROM quotes WHERE idquote=%s'
+        data = (quoteid,)
+        return self._sql_get(sql, data=data)
+
+    def add_tts_to_quote(self, quoteid, ttsname):
+        sql = 'UPDATE quotes SET quote_tts=%s WHERE idquote=%s'
+        data = (ttsname, quoteid)
+        self.cursor.execute(sql, data)
+        self.conn.commit()

@@ -21,12 +21,30 @@ This file makes use of code found at the following address.
 Source : https://gist.github.com/EvieePy/ab667b74e9758433b3eb806c53a19f34
 '''
 
+import discord
+import asyncio
+
 from async_timeout import timeout
 from functools import partial
 from ..utils import CustomQueue, get_full_info
 
-import asyncio
-import discord
+
+class FileSource(discord.PCMVolumeTransformer):
+
+    def __init__(self, source, *, data, requester):
+        super().__init__(source)
+
+        self.requester = requester
+        self.filename = data.get('filename')
+        self.title = data.get('title')
+
+    def __getitem__(self, item: str):
+        return self.__getattribute__(item)
+
+    @classmethod
+    def create_source(cls, ctx, filename: str):
+        data = {'filename': f'tts_files/{filename}.mp3', 'title': filename}
+        return cls(discord.FFmpegPCMAudio(data['filename']), data=data, requester=ctx.author)
 
 
 class YTDLSource(discord.PCMVolumeTransformer):
@@ -41,8 +59,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, requester):
         super().__init__(source)
         self.requester = requester
+
         self.title = data.get('title')
-        self.web_url = data.get('webpage_url')
+        self.ctx = data.get('ctx')
+        self.search = data.get('search')
 
     def __getitem__(self, item: str):
         return self.__getattribute__(item)
@@ -130,17 +150,18 @@ class AudioPlayer:
                     print('Bot disconnecting due to no new song requests.')
                     return self.destroy(self._guild)
 
-                try:
-                    # Attempt to create the music audio stream.
-                    source = await YTDLSource.regather_stream(source, loop=self.bot.loop)  # noqa
-                except Exception as e:
+                # Check if this is from youtube
+                if not isinstance(source, FileSource):
+                    try:
+                        # Attempt to create the music audio stream.
+                        source = await YTDLSource.regather_stream(source, loop=self.bot.loop)  # noqa
+                    except Exception as e:
 
-                    # Handle errors retreving the music stream.
-                    # We dont want to end the bot, so simply alert
-                    # the channel and try the next song.
-                    await self._channel.send(f'There was an error processing your song.\n'  # noqa
-                                             f'```css\n[{e}]\n```')
-                    continue
+                        # Handle errors retreving the music stream.
+                        # We dont want to end the bot, so simply alert
+                        # the channel and try the next song.
+                        await self._channel.send(f'There was an error processing your song.\n```css\n[{e}]\n```')  # noqa
+                        continue
 
                 # Store the current song being played
                 self.current = source
