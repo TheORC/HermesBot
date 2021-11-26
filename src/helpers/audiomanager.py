@@ -57,9 +57,6 @@ class AudioManager:
 
         """
 
-        # TODO: check if player clean up is working properly
-        print(self.players)  # DEBUG
-
         try:
             player = self.players[ctx.guild.id]
             print('Using an existing player')
@@ -70,8 +67,13 @@ class AudioManager:
         return player
 
     async def on_bot_join_channel(self, ctx, guild):
+
+        num_quotes = self.db_manager.get_number_quotes(guild.id)
         quotes = self.db_manager.get_all_quotes(guild.id)
-        id = random.randrange(0, len(quotes))
+        id = random.randrange(0, num_quotes)
+
+        print(f'Length {num_quotes}')
+        print(f'ID: {id}')
 
         # Get the channel we are playing in
         player = self._get_player(ctx)
@@ -171,7 +173,7 @@ class AudioManager:
             items['ctx'] = ctx
             items['search'] = results['webpage_url']
 
-            await player.queue.put(items)
+            await player.queue.put(items, index=play_index)
 
     async def pause(self, ctx):
         """

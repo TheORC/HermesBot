@@ -188,7 +188,6 @@ class QuoteController(commands.Cog):
                 return await ctx.send('Please provide an Id.')
             return await self._get_id_quote(ctx, args)
         elif command == 'all':
-            print(f'COUNT: {self.db_manager.get_number_quotes(ctx.guild.id)}')
             return await self._get_all_quotes(ctx)
         else:
             return await ctx.send('Unknown command. Check .help for command usage')

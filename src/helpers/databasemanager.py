@@ -20,6 +20,14 @@ class DatabaseManager:
         except Exception:
             pass
 
+    def _reconnect(self):
+        try:
+            self.cursor.close()
+            self.conn.close()
+        except Exception as e:
+            print(f'Error Closing Database Connection \n {e}')
+        self.connect()
+
     def _import_login_details(self):
         load_dotenv()
         username = os.getenv('DB_USER')
@@ -32,7 +40,8 @@ class DatabaseManager:
             user=self.user,
             password=self.passw,
             host=self.host,
-            database=self.dbName)
+            database=self.dbName,
+            autocommit=True)
 
         try:
             self.cursor = self.conn.cursor()
@@ -53,10 +62,13 @@ class DatabaseManager:
     def _sql_insert(self, query, data):
         self.cursor.execute(query, data)
         self.conn.commit()
-        return self.cursor.lastrowid
+
+        id = self.cursor.lastrowid
+        self._reconnect()  # Changes have been made.
+        return id
 
     def get_users(self, guildid):
-        sql = 'SELECT * FROM users WHERE idguild = %s'
+        sql = 'SELECT * FROM users WHERE idguild=%s'
         data = (guildid,)
         return self._sql_get(sql, data=data)
 
@@ -73,8 +85,7 @@ class DatabaseManager:
     def add_user(self, guildid, name):
         sql = 'INSERT INTO users (idguild, username) VALUES (%s, %s)'
         data = (guildid, name)
-        user = self._sql_insert(sql, data)
-        return user
+        return self._sql_insert(sql, data)
 
     def remove_user(self, guildid, userid):
         sql_update = 'UPDATE quotes SET iduser=-1 WHERE idguild=%s AND iduser=%s'  # noqa
@@ -82,9 +93,9 @@ class DatabaseManager:
         data = (guildid, userid)
 
         self.cursor.execute(sql_update, data)
-        self.conn.commit()
         self.cursor.execute(sql_delete, data)
         self.conn.commit()
+        self._reconnect()
 
     def add_user_quote(self, userid, guildid, userquote):
         sql = 'INSERT INTO quotes (iduser, idguild, quote_data, quote_date) VALUES (%s, %s, %s, %s)'  # noqa
@@ -96,6 +107,7 @@ class DatabaseManager:
         data = (guildid, quoteid)
         self.cursor.execute(sql_delete, data)
         self.conn.commit()
+        self._reconnect()
 
     def get_missing_tts(self, guildid):
         sql = 'SELECT * FROM quotes WHERE quote_tts IS NULL AND idguild=%s'
@@ -122,3 +134,4 @@ class DatabaseManager:
         data = (ttsname, quoteid)
         self.cursor.execute(sql, data)
         self.conn.commit()
+        self._reconnect()
