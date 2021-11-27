@@ -18,6 +18,7 @@ limitations under the License.
 '''
 
 from youtube_dl import YoutubeDL
+from youtube_dl.utils import DownloadError
 
 ytdlopts = {
     'format': 'bestaudio/best',
@@ -38,7 +39,12 @@ def get_quick_info(url):
     """Extract quick information from YouTube.
     This request does not process the url.
     """
-    return ytdl.extract_info(url, download=False, process=False)
+    try:
+        info = ytdl.extract_info(url, download=False, process=False)
+    except DownloadError as e:
+        print(f'Download Error: {e}')
+        return False
+    return info
 
 
 def get_full_info(url):

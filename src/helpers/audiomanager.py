@@ -70,6 +70,10 @@ class AudioManager:
 
         num_quotes = self.db_manager.get_number_quotes(guild.id)
         quotes = self.db_manager.get_all_quotes(guild.id)
+
+        if(num_quotes == 0):
+            return
+
         id = random.randrange(0, num_quotes)
 
         print(f'Length {num_quotes}')
@@ -125,6 +129,10 @@ class AudioManager:
 
         # Get the quick YouTube information from the search provided.
         results = get_quick_info(search)
+
+        if results is False:
+            await ctx.send(f'```Could not find the song.  Try using a URL instead.```')  # noqa
+            return
 
         # This code sucks.  I should change how CustomQueue()
         # works so I dont need to do this.

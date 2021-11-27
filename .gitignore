@@ -6,6 +6,7 @@ __pycache__/
 tts_files/
 
 # Don't track these files
+*.mp3
 test.json
 storage.json
 .env
