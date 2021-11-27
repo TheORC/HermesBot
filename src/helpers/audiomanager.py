@@ -131,7 +131,7 @@ class AudioManager:
         results = get_quick_info(search)
 
         if results is False:
-            await ctx.send(f'```Could not find the song.  Try using a URL instead.```')  # noqa
+            await ctx.send(f'```Could not find a song with the search **{search}**.  Try using a URL instead.```')  # noqa
             return
 
         # This code sucks.  I should change how CustomQueue()
