@@ -42,11 +42,13 @@ class AudioManager:
         self.players = {}
 
         load_dotenv()
-        db_host = os.getenv('DB_HOST')
-        db_name = os.getenv('DB_NAME')
+        self.db_host = os.getenv('DB_HOST')
+        self.db_name = os.getenv('DB_NAME')
 
-        self.db_manager = DatabaseManager(db_host, db_name)
-        self.db_manager.connect()
+    def _get_database_handle(self):
+        temp = DatabaseManager(self.db_host, self.db_name)
+        temp.connect()
+        return temp
 
     def _get_player(self, ctx):
         """
@@ -68,8 +70,10 @@ class AudioManager:
 
     async def on_bot_join_channel(self, ctx, guild):
 
-        num_quotes = self.db_manager.get_number_quotes(guild.id)
-        quotes = self.db_manager.get_all_quotes(guild.id)
+        db_manager = self._get_database_handle()
+
+        num_quotes = db_manager.get_number_quotes(guild.id)
+        quotes = db_manager.get_all_quotes(guild.id)
 
         if(num_quotes == 0):
             return
