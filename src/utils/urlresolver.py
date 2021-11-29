@@ -17,8 +17,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from youtube_dl import YoutubeDL
 from youtube_dl.utils import DownloadError
+import youtube_dl
 
 ytdlopts = {
     'format': 'bestaudio/best',
@@ -33,7 +33,6 @@ ytdlopts = {
     'source_address': '0.0.0.0',
     'cachedir': False
 }
-ytdl = YoutubeDL(ytdlopts)
 
 
 def get_quick_info(url):
@@ -41,7 +40,11 @@ def get_quick_info(url):
     This request does not process the url.
     """
     try:
-        info = ytdl.extract_info(url, download=False, process=False)
+
+        with youtube_dl.YoutubeDL(ytdlopts) as ytdl:
+            ytdl.cache.remove()
+            info = ytdl.extract_info(url, download=False, process=False)
+
     except DownloadError as e:
         print(f'Download Error: {e}')
         return False
@@ -52,7 +55,14 @@ def get_full_info(url):
     """Extract the full information from YouTube.
     This request processes the url or search.
     """
-    return ytdl.extract_info(url, download=False, process=True)
+    try:
+        with youtube_dl.YoutubeDL(ytdlopts) as ytdl:
+            ytdl.cache.remove()
+            info = ytdl.extract_info(url, download=False, process=True)
+    except DownloadError as e:
+        print(f'Download Error: {e}')
+        return False
+    return info
 
 
 def resolve_video_urls(list):
