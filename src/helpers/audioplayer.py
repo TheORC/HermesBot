@@ -64,6 +64,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.ctx = data.get('ctx')
         self.search = data.get('search')
 
+        self.url = f'https://www.youtube.com/watch?v={data.get("id")}'
+
     def __getitem__(self, item: str):
         return self.__getattribute__(item)
 

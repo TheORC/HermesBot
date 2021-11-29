@@ -269,9 +269,17 @@ class AudioManager:
         if not player.current:
             return await smart_print(ctx, 'The bot is not playing anything.')
 
-        await smart_print(ctx,
-                          '**Now Playing:** `%s` requested by `%s`',
-                          data=[vc.source.title, vc.source.requester])
+        embed = discord.Embed(
+            color=discord.Colour.dark_teal()
+        )
+        embed.add_field(name='**Now Playing**',
+                        value=f'[{vc.source.title}]({vc.source.url})')
+        embed.add_field(name='Requested By', value=f'{vc.source.requester}')
+        await ctx.send(embed=embed)
+
+        # await smart_print(ctx,
+        #                   '**Now Playing:** `[%s](%s)` requested by `%s`',
+        #                   data=[vc.source.title, 'https://thelink', ])
 
     async def display_playing_queue(self, ctx):
         """
