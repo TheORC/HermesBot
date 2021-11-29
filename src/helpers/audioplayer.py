@@ -181,8 +181,8 @@ class AudioPlayer:
                 # Play the current audio stream
                 client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))  # noqa
 
-                self._now_playing = await self._channel.send(f'> **Now Playing:** `{source.title}` requested by '  # noqa
-                                         f'`{source.requester}`')
+                # self._now_playing = await self._channel.send(f'> **Now Playing:** `{source.title}` requested by '  # noqa
+                #                          f'`{source.requester}`')
 
                 # Wait for the song to finish
                 await self.next.wait()
@@ -191,10 +191,10 @@ class AudioPlayer:
                 source.cleanup()
                 self.current = None
 
-                try:
-                    await self._now_playing.delete()
-                except discord.HTTPException:
-                    pass
+                # try:
+                #    await self._now_playing.delete()
+                # except discord.HTTPException:
+                #    pass
             except asyncio.CancelledError:
                 print('AudioPlayer loop cancelled Error.  Cleanup.')
                 return self.destroy(self._guild)
