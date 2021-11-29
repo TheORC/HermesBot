@@ -310,7 +310,9 @@ class AudioManager:
 
         fmt = '\n'.join(f'**`{_["title"]}`**' for _ in songs)
         embed = discord.Embed(
-            title=f'Upcoming - Next {len(upcoming)}', description=fmt)
+            title=f'Upcoming - Next {len(upcoming)}',
+            color=discord.Colour.dark_teal(),
+            description=fmt)
 
         await ctx.send(embed=embed)
 

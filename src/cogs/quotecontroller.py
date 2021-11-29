@@ -90,7 +90,9 @@ class QuoteController(commands.Cog):
             quotes.append([quote[0], quote[2], quote[4], quote[5]])
 
         fmt = '\n'.join(f'**`ID ({_[0]}) : {_[2]}`**' for _ in quotes)
-        embed = discord.Embed(title=f"{user[2]}'s Quotes", description=fmt)
+        embed = discord.Embed(title=f"{user[2]}'s Quotes",
+                              color=discord.Colour.dark_teal(),
+                              description=fmt)
         await ctx.send(embed=embed)
 
     async def _get_id_quote(self, ctx, id):
@@ -116,7 +118,10 @@ class QuoteController(commands.Cog):
                 quotes.append([quote[2], quote[4], quote[5]])
 
         fmt = '\n'.join(f'**`{_[0]}: {_[1]}`**' for _ in quotes)
-        embed = discord.Embed(title='All Quotes', description=fmt)
+        embed = discord.Embed(
+            title='All Quotes',
+            color=discord.Colour.dark_teal(),
+            description=fmt)
         await ctx.send(embed=embed)
 
     @commands.command(
@@ -129,7 +134,9 @@ class QuoteController(commands.Cog):
         if command is None:
             users = self.db_manager.get_users(ctx.guild.id)
             fmt = '\n'.join(f'**`{_[2]}`**' for _ in users)
-            embed = discord.Embed(title='Users', description=fmt)
+            embed = discord.Embed(
+                title='Users', color=discord.Colour.dark_teal(),
+                description=fmt)
             return await ctx.send(embed=embed)
 
         command = command.lower()
