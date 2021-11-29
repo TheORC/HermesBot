@@ -1,5 +1,6 @@
 from discord.ext import commands
 from ..helpers import DatabaseManager, TTSManager
+from ..utils import smart_print
 from dotenv import load_dotenv
 
 import os
@@ -32,7 +33,8 @@ class QuoteController(commands.Cog):
 
         missing = self.db_manager.get_missing_tts(guildid)
 
-        await ctx.send(f'Found {len(missing)} TTS objects.  Fixing.  This might take a while.')
+        await smart_print(ctx, 'Found **%s** objects with missing TTS.  Fixing.',  # noqa
+                          data=[len(missing)])
 
         for quote in missing:
             file_name = f'{quote[0]}_{quote[2]}_{quote[1]}'
@@ -41,35 +43,37 @@ class QuoteController(commands.Cog):
     async def _add_user(self, ctx, name):
 
         if(not name):
-            return await ctx.send('No name was provided.')
+            return await smart_print(ctx, 'Command missing arguments. Use .help for additional information.')  # noqa
 
         # Lets see if the name already exists
         users = self.db_manager.get_users(ctx.guild.id)
         user = self._contains_user(name, users)
         if(user):
             # This name does exist!  Oh no
-            return await ctx.send('This name is already in the database.')
+            return await smart_print(ctx, 'This name has already been added.')
 
         # Ahhhhh shiiiiiit
         guild_id = ctx.guild.id
 
         self.db_manager.add_user(guild_id, name)
-        return await ctx.send(f'Added user {name}')
+        return await smart_print(ctx, 'Added user **%s** to the database.',
+                                 data=[name])
 
     async def _remove_user(self, ctx, name):
         if(not name):
-            return await ctx.send('No name was provided.')
+            return await smart_print(ctx, 'Command missing arguments. Use .help for additional information.')  # noqa
 
         # Lets see if the name already exists
         users = self.db_manager.get_users(ctx.guild.id)
         user = self._contains_user(name, users)
         if(not user):
             # This name does exist!  Oh no
-            return await ctx.send('This name is not in the database.')
+            return await smart_print(ctx, 'This name is not in the database.')
 
         # What do you do here!
         self.db_manager.remove_user(ctx.guild.id, user[0])
-        await ctx.send('The user has been deleted.  There quotes have also been removed.')
+        await smart_print(ctx, 'The user **%s** has been deleted.',
+                          data=[name])
 
     async def _get_user_quotes(self, ctx, name):
         quotes = []
@@ -78,7 +82,8 @@ class QuoteController(commands.Cog):
         users = self.db_manager.get_users(ctx.guild.id)
         user = self._contains_user(name, users)
         if(not user):
-            return await ctx.send(f'The user "{name}" could not be found')
+            return await smart_print(ctx, 'The user **%s** is not in the database.',  # noqa
+                                     data=[name])
 
         user_quotes = self.db_manager.get_user_quote(ctx.guild.id, name)
         for quote in user_quotes:
@@ -91,10 +96,11 @@ class QuoteController(commands.Cog):
     async def _get_id_quote(self, ctx, id):
         quotes = self.db_manager.get_id_quote(ctx.guild.id, id)
         if len(quotes) == 0:
-            return await ctx.send(f'No quote with the id "{id}" was found')
+            return await smart_print(ctx, 'The quote with id **%s**` does not exist',  # noqa
+                                     data=[id])
 
         quote = quotes[0]
-        await ctx.send(f'**`{quote[2]}: {quote[4]}`**')
+        await smart_print(ctx, '**`%s: %s`**', data=[quote[2], quote[4]])
 
     async def _get_all_quotes(self, ctx):
         quotes = []
@@ -134,7 +140,7 @@ class QuoteController(commands.Cog):
         elif command == 'remove':
             return await self._remove_user(ctx, args)
         else:
-            return await ctx.send('Unknown command. Check .help for command usage.')
+            return await smart_print(ctx, 'Unknown command. Check .help for command usage.')  # noqa
 
     @commands.command(
         name="add",
@@ -148,16 +154,18 @@ class QuoteController(commands.Cog):
 
         # We only add a quote if the user exsists
         if(not user):
-            return await ctx.send('The user "{}" is not in the database. '
-                                  'Please add them before creating a quote.'
-                                  .format(name))
+            return await smart_print(ctx,
+                                     'User **%s** is not in the database. '
+                                     'Add them before creating a quote.',
+                                     data=[name])
 
         # We need the guild id for a quote
         guild_id = ctx.guild.id
         try:
             # Send the quote to the database
             quote_id = self.db_manager.add_user_quote(user[0], guild_id, args)
-            await ctx.send(f'Added quote with id({quote_id}) for user {user[2]}')
+            await smart_print(ctx, 'Added quote for the user **%s** with an id of **%s**.',  # noqa
+                              data=[user[2], quote_id])
 
             # Generate tts filename
             file_name = f'{quote_id}_{guild_id}_{user[0]}'
@@ -166,7 +174,7 @@ class QuoteController(commands.Cog):
             await self.tts_manager.quote_to_tts(quote_id, args, file_name)
         except Exception as e:
             print(e)
-            await ctx.send(':( there was a problem adding your quote.')
+            await smart_print(ctx, 'Unable to create due to an unknown error.')
 
     @commands.command(
         name="quotes",
@@ -175,22 +183,22 @@ class QuoteController(commands.Cog):
     async def get_all_quotes(self, ctx, command=None, *, args=None):
 
         if not command:
-            return await ctx.send('Unknown command. Check .help for command usage')
+            return await smart_print(ctx, 'Unknown command. Check .help for command usage.')  # noqa
 
         command = command.lower()
 
         if command == 'user':
             if not args:
-                return await ctx.send('Please provide a name.')
+                return await smart_print(ctx, 'Unknown command. Check .help for command usage.')  # noqa
             return await self._get_user_quotes(ctx, args)
         elif command == 'id':
             if not args:
-                return await ctx.send('Please provide an Id.')
+                return await smart_print(ctx, 'Unknown command. Check .help for command usage.')  # noqa
             return await self._get_id_quote(ctx, args)
         elif command == 'all':
             return await self._get_all_quotes(ctx)
         else:
-            return await ctx.send('Unknown command. Check .help for command usage')
+            return await smart_print(ctx, 'Unknown command. Check .help for command usage.')  # noqa
 
     @commands.command(
         name="remove",
@@ -199,14 +207,15 @@ class QuoteController(commands.Cog):
     async def remove_quote(self, ctx, id: int):
 
         if(not id):
-            return await ctx.send('Please provided the quotes id.')
+            return await smart_print(ctx, 'Unknown command. Check .help for command usage.')  # noqa
 
         quote = self.db_manager.get_id_quote(ctx.guild.id, id)
         if len(quote) == 0:
-            return await ctx.send(f'No quote with the id "{id}" was found')
+            return await smart_print(ctx, 'Quote with id **%s** not found.',
+                                     data=[id])
 
         self.db_manager.remove_quote(ctx.guild.id, id)
-        await ctx.send('Removed quote.')
+        await smart_print(ctx, 'Quote removed successfully.')
 
     @commands.command(
         name="fix_tts",
@@ -214,7 +223,7 @@ class QuoteController(commands.Cog):
     )
     async def fix_tts(self, ctx):
         await self._check_for_missing_tts(ctx, ctx.guild.id)
-        await ctx.send('TTS should now be fixed.')
+        await smart_print(ctx, 'Finished fixing TTS.')
 
 
 def setup(bot):

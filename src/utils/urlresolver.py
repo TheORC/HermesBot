@@ -65,15 +65,18 @@ def resolve_video_urls(list):
     """
     results = []
     for item in list:
-        res = get_full_info(item['search'])  # Perform the search
+        try:
+            res = get_full_info(item['search'])  # Perform the search
 
-        # Handle cases where a list is returned
-        if('entries' in res):
-            en_list = list(res.get('entries'))
-            if(len(en_list) >= 1):
-                res = res.get('entries')[0]
-            else:
-                res = {'title': 'None'}
+            # Handle cases where a list is returned
+            if('entries' in res):
+                en_list = list(res.get('entries'))
+                if(len(en_list) >= 1):
+                    res = res.get('entries')[0]
+                else:
+                    res = {'title': 'None'}
 
-        results.append(res)
+            results.append(res)
+        except AttributeError:
+            pass
     return results

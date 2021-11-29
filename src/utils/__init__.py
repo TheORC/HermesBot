@@ -18,9 +18,10 @@ limitations under the License.
 '''
 from .customqueue import CustomQueue
 from .ttsworker import GTTSWorker
+from .messagehandler import smart_print
 from .urlresolver import (get_quick_info,
                           get_full_info,
                           resolve_video_urls)
 
 __all__ = ['CustomQueue', 'GTTSWorker', 'get_quick_info',
-           'get_full_info', 'resolve_video_urls']
+           'get_full_info', 'resolve_video_urls', 'smart_print']

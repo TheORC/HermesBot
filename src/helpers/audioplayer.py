@@ -26,7 +26,7 @@ import asyncio
 
 from async_timeout import timeout
 from functools import partial
-from ..utils import CustomQueue, get_full_info
+from ..utils import CustomQueue, get_full_info, smart_print
 
 
 class FileSource(discord.PCMVolumeTransformer):
@@ -147,7 +147,8 @@ class AudioPlayer:
                     async with timeout(300):  # 5 minutes...
                         source = await self.queue.get()
                 except asyncio.TimeoutError:
-                    print('Bot disconnecting due to no new song requests.')
+                    await smart_print(self._channel,
+                                      'No more songs.  Going to sleep.')
                     return self.destroy(self._guild)
 
                 # Check if this is from youtube
@@ -160,7 +161,10 @@ class AudioPlayer:
                         # Handle errors retreving the music stream.
                         # We dont want to end the bot, so simply alert
                         # the channel and try the next song.
-                        await self._channel.send(f'There was an error processing your song.\n```css\n[{e}]\n```')  # noqa
+                        await smart_print(self._channel,
+                                          'There was an error processing your song.\n'  # noqa
+                                          '```css\n[%s]\n```',
+                                          data=[e])
                         continue
 
                 # Store the current song being played
@@ -168,26 +172,20 @@ class AudioPlayer:
                 self.current.volume = self.volume
                 client = await self._get_client()
 
-                # We need to make sure the client exists before using it
-                if(client):
+                # If this is true, then chances are we
+                # disconnected from the internet
+                if(not client.is_connected()):
+                    print('The client is not connected.  Just clean up...')
+                    return self.destroy(self._guild)
 
-                    # If this is true, then chances are we
-                    # disconnected from the internet
-                    if(not client.is_connected()):
-                        print('The client is not connected.  Just clean up...')
-                        return self.destroy(self._guild)
+                # Play the current audio stream
+                client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))  # noqa
 
-                    # Play the current audio stream
-                    client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))  # noqa
+                self._now_playing = await self._channel.send(f'> **Now Playing:** `{source.title}` requested by '  # noqa
+                                         f'`{source.requester}`')
 
-                    self._now_playing = await self._channel.send(f'**Now Playing:** `{source.title}` requested by '  # noqa
-                                             f'`{source.requester}`')
-
-                    # Wait for the song to finish
-                    await self.next.wait()
-                else:
-                    await self._channel.send(f'The bot met some resistance playing the song '  # noqa
-                                             f'`{source.title}`')
+                # Wait for the song to finish
+                await self.next.wait()
 
                 # Make sure the FFmpeg process is cleaned up.
                 source.cleanup()
@@ -198,7 +196,7 @@ class AudioPlayer:
                 except discord.HTTPException:
                     pass
             except asyncio.CancelledError:
-                print('Player loop has ended. Remove it.')
+                print('AudioPlayer loop cancelled Error.  Cleanup.')
                 return self.destroy(self._guild)
 
     def destroy(self, guild):

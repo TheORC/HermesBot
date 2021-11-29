@@ -19,6 +19,7 @@ limitations under the License.
 
 from discord.ext import commands
 from ..helpers import AudioManager
+from ..utils import smart_print
 
 import asyncio
 
@@ -29,9 +30,6 @@ class BotController(commands.Cog):
         """Initialize important information."""
         self.bot = bot
         self.audio_manager = AudioManager(bot)
-
-    async def _sm(self, ctx, message: str):
-        await ctx.send(f'`{message}`')
 
     async def handle_disconnection(self, guild):
         await self.audio_manager.clear_audio_player(guild)
@@ -44,27 +42,38 @@ class BotController(commands.Cog):
         try:
             channel = ctx.author.voice.channel
         except AttributeError:
-            return await self._sm(ctx, 'You must be in a channel to summon the bot.')  # noqa
+            return await smart_print(ctx, 'The bot can only be summoned from a voice channel')  # noqa
 
         vc = ctx.voice_client
 
         # Check if the vc already exists
         if(vc):
-            if(vc.channel.id == channel.id):
-                print('vc already in the channel do nothing.')
-                return
-            try:
-                await vc.move_to(channel)
-            except asyncio.TimeoutError:
-                return await self._sm(ctx, f'Moving to channel: <{channel}> timed out.')  # noqa
+
+            if(self.audio_manager.has_player(ctx) is False):
+                voice_state = ctx.guild.voice_client
+                await voice_state.disconnect()
+                await channel.connect()
+            else:
+                # Check if the bot is already in the voice channel
+                if(vc.channel.id == channel.id):
+                    print('Already in the same channel')
+                    return
+                # Connect to the new voice channel
+                try:
+                    print('Moving to channel')
+                    await vc.move_to(channel)
+                except asyncio.TimeoutError:
+                    return await smart_print(ctx, 'Moving to channel: <%s> timed out.', data=[channel])  # noqa
         else:
+            # The bot is not in a voice channel.  Lets join one
             try:
+                print('Connecting to channel')
                 await channel.connect()
             except asyncio.TimeoutError:
-                return await self._sm(ctx, f'Connecting to channel: <{channel}> timed out.')  # noqa
+                return await smart_print(ctx, 'Connecting to channel: <%s> timed out.', data=[channel])  # noqa
 
         await self.audio_manager.on_bot_join_channel(ctx, ctx.guild)
-        await self._sm(ctx, f'Connected to: **{channel}**')
+        await smart_print(ctx, 'Connected to: **%s**', data=[channel])
 
     @commands.command(name='disconnect',
                       aliases=['leave', 'go', 'goaway', 'go-away', 'stop'],
@@ -73,7 +82,7 @@ class BotController(commands.Cog):
         vc = ctx.voice_client
 
         if(not vc or not vc.is_connected()):
-            return await self._sm(ctx, 'The bot is not connected to a channel')
+            return await smart_print(ctx, 'The bot is not connected to a channel.')  # noqa
 
         # Clean up the bot, its time for it to go.
         # await self.audio_manager.clear_audio_player(ctx.guild)
@@ -83,39 +92,52 @@ class BotController(commands.Cog):
         name="play",
         help="- <url:string | search:string> : Adds a song to the queue."
     )
-    async def play_song(self, ctx, *, search=None):
+    async def play_song(self, ctx, *, search: str = None):
+
+        await ctx.invoke(self.player_connect)
+
+        # No search was provided.  Maybe we need to resume?
+        if(search is None):
+            if self.audio_manager.can_resume(ctx):
+                return await ctx.invoke(self.resume_song)
+            else:
+                return await smart_print(ctx, 'Command missing arguments. Use .help for additional information.')  # noqa
 
         # In some cases the bot may have been disconnected
         # manualy.  If this is the case, then the voice_client
         # exsists but is not conected.  Lets handle that now.
         vc = ctx.voice_client
-        if (not vc or not ctx.voice_client.is_connected()):
-            await ctx.invoke(self.player_connect)
+
+        # Check if the bot needs connecting
+        # if (not vc or not ctx.voice_client.is_connected()):
 
         vc = ctx.voice_client
         if(not vc):
-            print('There is something wrong with the voice client')
+            print('The bot was unable to create a voice client.')
             return
 
-        if(search is None):
-            return await ctx.invoke(self.resume_song)
-
+        # No resume.  This is a new song request.
         await self.audio_manager.play(ctx, search)
 
     @commands.command(name="playnext",
                       aliases=['pn'],
                       help="- Adds a song to the top of the queue.")
-    async def play_song_next(self, ctx, *, search=None):
+    async def play_song_next(self, ctx, *, search: str = None):
+
+        # No search was provided.  Maybe we need to resume?
+        if(search is None):
+            if self.audio_manager.can_resume(ctx):
+                return await ctx.invoke(self.resume_song)
+            else:
+                return await smart_print(ctx, 'Command missing arguments. Use .help for additional information.')  # noqa
+
         vc = ctx.voice_client
         if (not vc):
             await ctx.invoke(self.player_connect)
 
         vc = ctx.voice_client
         if(not vc):
-            return
-
-        if(search is None):
-            await self._sm(ctx, 'No song provided')
+            print('The bot was unable to create a voice client.')
             return
 
         await self.audio_manager.play(ctx, search, playnext=True)
