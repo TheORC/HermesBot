@@ -18,6 +18,8 @@ limitations under the License.
 """
 
 from discord.ext import commands
+from dotenv import load_dotenv
+
 import discord
 import os
 
@@ -31,8 +33,12 @@ class HermesClient(commands.Bot):
 
     async def on_ready(self):
         """Called when the bot connects."""
+
+        load_dotenv()
+        status = os.getenv('BOT_STATUS')
+
         await self.change_presence(status=discord.Status.online,
-                                   activity=discord.Game("Hermes Bot"))
+                                   activity=discord.Game(status))
         self._register_cogs()
         print("Bot is ready!")
 
