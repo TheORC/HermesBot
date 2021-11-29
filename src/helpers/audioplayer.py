@@ -44,7 +44,7 @@ class FileSource(discord.PCMVolumeTransformer):
     @classmethod
     def create_source(cls, ctx, filename: str):
         data = {'filename': f'tts_files/{filename}.mp3', 'title': filename}
-        return cls(discord.FFmpegPCMAudio(data['filename']), data=data, requester=ctx.author)
+        return cls(discord.FFmpegPCMAudio(data['filename']), data=data, requester=ctx.author)  # noqa
 
 
 class YTDLSource(discord.PCMVolumeTransformer):
