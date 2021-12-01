@@ -29,6 +29,11 @@ class QuoteController(commands.Cog):
                 return user
         return None
 
+    def _trim_quote(self, quote):
+        if len(quote) > 1024:
+            quote = quote[:1021] + '...'
+        return quote
+
     async def _check_for_missing_tts(self, ctx, guildid):
 
         missing = self.db_manager.get_missing_tts(guildid)
@@ -87,7 +92,7 @@ class QuoteController(commands.Cog):
         user_quotes = self.db_manager.get_user_quote(ctx.guild.id, name)
 
         user_quotes = '\n'.join(
-            f'**{_[0]}** - "{_[4]}"' for _ in user_quotes)
+            f'**{_[0]}** - "{self._trim_quote(_[4])}"' for _ in user_quotes)
         embed = discord.Embed(title=f"{user[2]}'s Quotes",
                               color=discord.Colour.dark_teal(),
                               description=user_quotes)
@@ -96,6 +101,7 @@ class QuoteController(commands.Cog):
 
     async def _get_id_quote(self, ctx, id):
         quotes = self.db_manager.get_id_quote(ctx.guild.id, id)
+
         if len(quotes) == 0:
             return await smart_print(ctx, 'The quote with id **%s**` does not exist',  # noqa
                                      data=[id])
@@ -105,10 +111,9 @@ class QuoteController(commands.Cog):
         embed = discord.Embed(
             title=f"{quote[2]}'s Quote",
             color=discord.Colour.dark_teal(),
-            description=quote[4]
+            description=self._trim_quote(quote[4])
             )
         await ctx.send(embed=embed)
-        await smart_print(ctx, '**`%s: %s`**', data=[quote[2], quote[4]])
 
     async def _get_all_quotes(self, ctx):
 
@@ -130,7 +135,7 @@ class QuoteController(commands.Cog):
                 user_quotes = 'None'
 
             embed.add_field(name=f"{user[2]}'s quotes",
-                            value=user_quotes, inline=False)
+                            value=self._trim_quote(user_quotes), inline=False)
 
             # for quote in user_quotes:
             #    quotes.append([quote[2], quote[4], quote[5]])
