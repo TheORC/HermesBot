@@ -129,18 +129,25 @@ class QuoteController(commands.Cog):
             # Get all the users quotes
             user_quotes = self.db_manager.get_user_quote(ctx.guild.id, user[2])
             user_quotes = '\n'.join(
-                f'**{_[0]}** - "{_[4]}"' for _ in user_quotes)
+                f'**{_[0]}** - "{self._trim_quote(_[4])}"' for _ in user_quotes)
 
             if user_quotes == '':
                 user_quotes = 'None'
 
-            embed.add_field(name=f"{user[2]}'s quotes",
-                            value=self._trim_quote(user_quotes), inline=False)
+            if len(user_quotes) > 1024:
 
-            # for quote in user_quotes:
-            #    quotes.append([quote[2], quote[4], quote[5]])
+                embed.add_field(
+                    name=f"{user[2]}'s quotes", value='.', inline=False)
 
-        # fmt = '\n'.join(f'**`{_[0]}: {_[1]}`**' for _ in quotes)
+                while len(user_quotes) > 0:
+                    output = user_quotes[: 1024 if len(
+                        user_quotes) > 1024 else len(user_quotes)]
+                    embed.add_field(name="cont...", value=output, inline=False)
+                    user_quotes = user_quotes[1024: len(user_quotes)]
+
+            else:
+                embed.add_field(name=f"{user[2]}'s quotes",
+                                value=user_quotes, inline=False)
 
         await ctx.send(embed=embed)
 

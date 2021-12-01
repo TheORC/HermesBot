@@ -73,7 +73,7 @@ class DatabaseManager:
         return self._sql_get(sql, data=data)
 
     def get_user_quote(self, guildid, name):
-        sql = 'SELECT * FROM user_quotes WHERE username=%s AND idguild=%s'  # noqa
+        sql = 'SELECT * FROM user_quotes WHERE username=%s AND idguild=%s ORDER BY idquote'  # noqa
         data = (name, guildid)
         return self._sql_get(sql, data=data)
 
