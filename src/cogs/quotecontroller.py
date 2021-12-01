@@ -76,7 +76,6 @@ class QuoteController(commands.Cog):
                           data=[name])
 
     async def _get_user_quotes(self, ctx, name):
-        quotes = []
 
         # First, we need to get all the users
         users = self.db_manager.get_users(ctx.guild.id)
@@ -86,13 +85,13 @@ class QuoteController(commands.Cog):
                                      data=[name])
 
         user_quotes = self.db_manager.get_user_quote(ctx.guild.id, name)
-        for quote in user_quotes:
-            quotes.append([quote[0], quote[2], quote[4], quote[5]])
 
-        fmt = '\n'.join(f'**`ID ({_[0]}) : {_[2]}`**' for _ in quotes)
+        user_quotes = '\n'.join(
+            f'**{_[0]}** - "{_[4]}"' for _ in user_quotes)
         embed = discord.Embed(title=f"{user[2]}'s Quotes",
                               color=discord.Colour.dark_teal(),
-                              description=fmt)
+                              description=user_quotes)
+
         await ctx.send(embed=embed)
 
     async def _get_id_quote(self, ctx, id):
@@ -102,26 +101,42 @@ class QuoteController(commands.Cog):
                                      data=[id])
 
         quote = quotes[0]
+
+        embed = discord.Embed(
+            title=f"{quote[2]}'s Quote",
+            color=discord.Colour.dark_teal(),
+            description=quote[4]
+            )
+        await ctx.send(embed=embed)
         await smart_print(ctx, '**`%s: %s`**', data=[quote[2], quote[4]])
 
     async def _get_all_quotes(self, ctx):
-        quotes = []
 
         # First, we need to get all the users
         users = self.db_manager.get_users(ctx.guild.id)
 
+        embed = discord.Embed(
+            title='All Quotes',
+            color=discord.Colour.dark_teal()
+            )
+
         for user in users:
             # Get all the users quotes
             user_quotes = self.db_manager.get_user_quote(ctx.guild.id, user[2])
+            user_quotes = '\n'.join(
+                f'**{_[0]}** - "{_[4]}"' for _ in user_quotes)
 
-            for quote in user_quotes:
-                quotes.append([quote[2], quote[4], quote[5]])
+            if user_quotes == '':
+                user_quotes = 'None'
 
-        fmt = '\n'.join(f'**`{_[0]}: {_[1]}`**' for _ in quotes)
-        embed = discord.Embed(
-            title='All Quotes',
-            color=discord.Colour.dark_teal(),
-            description=fmt)
+            embed.add_field(name=f"{user[2]}'s quotes",
+                            value=user_quotes, inline=False)
+
+            # for quote in user_quotes:
+            #    quotes.append([quote[2], quote[4], quote[5]])
+
+        # fmt = '\n'.join(f'**`{_[0]}: {_[1]}`**' for _ in quotes)
+
         await ctx.send(embed=embed)
 
     @commands.command(
@@ -133,7 +148,7 @@ class QuoteController(commands.Cog):
         # What are we doing with this command?
         if command is None:
             users = self.db_manager.get_users(ctx.guild.id)
-            fmt = '\n'.join(f'**`{_[2]}`**' for _ in users)
+            fmt = '\n'.join(f'**{_[2]}**' for _ in users)
             embed = discord.Embed(
                 title='Users', color=discord.Colour.dark_teal(),
                 description=fmt)

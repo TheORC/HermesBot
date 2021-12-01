@@ -39,10 +39,10 @@ class HermesClient(commands.Bot):
 
         await self.change_presence(status=discord.Status.online,
                                    activity=discord.Game(status))
-        self._register_cogs()
+
         print("Bot is ready!")
 
-    def _register_cogs(self):
+    def register_cogs(self):
         """Register the discord bot cogs"""
         for file in os.listdir('./src/cogs'):
             if file.endswith(".py"):

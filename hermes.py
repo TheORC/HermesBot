@@ -16,6 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 from dotenv import load_dotenv
+
 import src
 import os
 
@@ -27,10 +28,13 @@ def Main():
     token = os.getenv('DISCORD_TOKEN')
 
     # Create the client
-    client = src.HermesClient(command_prefix=".")
+    bot = src.HermesClient(command_prefix='.')
+
+    # Load our cogs
+    bot.register_cogs()
 
     # Start the bot
-    client.run(token)
+    bot.run(token)
 
 
 if __name__ == "__main__":
