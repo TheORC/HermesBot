@@ -19,9 +19,16 @@ limitations under the License.
 from .customqueue import CustomQueue
 from .ttsworker import GTTSWorker
 from .messagehandler import smart_print
+from .multipageembed import MultiPageEmbed, PageEmbedManager
 from .urlresolver import (get_quick_info,
                           get_full_info,
                           resolve_video_urls)
 
-__all__ = ['CustomQueue', 'GTTSWorker', 'get_quick_info',
-           'get_full_info', 'resolve_video_urls', 'smart_print']
+__all__ = ['CustomQueue',
+           'GTTSWorker',
+           'MultiPageEmbed',
+           'PageEmbedManager',
+           'get_quick_info',
+           'get_full_info',
+           'resolve_video_urls',
+           'smart_print']

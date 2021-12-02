@@ -3,6 +3,8 @@ from ..helpers import DatabaseManager, TTSManager
 from ..utils import smart_print
 from dotenv import load_dotenv
 
+from ..utils import PageEmbedManager
+
 import os
 import discord
 
@@ -23,6 +25,8 @@ class QuoteController(commands.Cog):
         tts_path = os.getenv('TTS_PATH')
         self.tts_manager = TTSManager(bot, self.db_manager, filepath=tts_path)
 
+        self.embed_manager = PageEmbedManager()
+
     def _contains_user(self, username, users):
         for user in users:
             if user[2].lower() == username.lower():
@@ -33,6 +37,19 @@ class QuoteController(commands.Cog):
         if len(quote) > 1024:
             quote = quote[:1021] + '...'
         return quote
+
+    def _get_next_segment(self, data):
+
+        length = len(data)
+
+        if length > 1024:
+            last_index = data.rfind('- **')
+            temp = data[:1024]
+            text = temp[:last_index]
+        else:
+            text = data
+
+        return last_index, text, data[:0]
 
     async def _check_for_missing_tts(self, ctx, guildid):
 
@@ -120,36 +137,40 @@ class QuoteController(commands.Cog):
         # First, we need to get all the users
         users = self.db_manager.get_users(ctx.guild.id)
 
-        embed = discord.Embed(
-            title='All Quotes',
-            color=discord.Colour.dark_teal()
-            )
+        # test_embed = MultiPageEmbed()
+
+        quotes = []
 
         for user in users:
             # Get all the users quotes
             user_quotes = self.db_manager.get_user_quote(ctx.guild.id, user[2])
-            user_quotes = '\n'.join(
-                f'**{_[0]}** - "{self._trim_quote(_[4])}"' for _ in user_quotes)
 
-            if user_quotes == '':
-                user_quotes = 'None'
+            for quote in user_quotes:
+                quotes.append([f'{user[2]} - {quote[0]}', quote[4]])
 
-            if len(user_quotes) > 1024:
+        embed = self.embed_manager.CreateEmbed(
+            title='All Quotes',
+            description=f'There is a total of {len(quotes)} quotes',
+            color=discord.Colour.dark_teal(),
+            inline=False
+            )
+        embed.add_items(quotes)
+        await self.embed_manager.send(ctx, embed)
 
-                embed.add_field(
-                    name=f"{user[2]}'s quotes", value='.', inline=False)
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
 
-                while len(user_quotes) > 0:
-                    output = user_quotes[: 1024 if len(
-                        user_quotes) > 1024 else len(user_quotes)]
-                    embed.add_field(name="cont...", value=output, inline=False)
-                    user_quotes = user_quotes[1024: len(user_quotes)]
+        if not user.bot:
 
+            # Get the embedable
+            embedable = await self.embed_manager.check(reaction.message.id,
+                                                       reaction.emoji)
+            if embedable:
+                # Remove the user interaction
+                await reaction.remove(user)
+                await reaction.message.edit(embed=embedable)
             else:
-                embed.add_field(name=f"{user[2]}'s quotes",
-                                value=user_quotes, inline=False)
-
-        await ctx.send(embed=embed)
+                pass
 
     @commands.command(
         name="users",
