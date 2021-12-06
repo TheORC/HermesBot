@@ -26,6 +26,7 @@ import asyncio
 
 from async_timeout import timeout
 from functools import partial
+from .guildsettings import GuildSettings
 from ..utils import CustomQueue, get_full_info, smart_print
 
 
@@ -108,6 +109,8 @@ class AudioPlayer:
         self.volume = .05  # 5% seams like a nice starting point.
         self.audio_player = self.bot.loop.create_task(self.player_loop())
 
+        self.guild_settings = GuildSettings(self._guild.id)
+
     async def _get_client(self):
         """
         Get the current audio client.
@@ -169,9 +172,16 @@ class AudioPlayer:
                                           data=[e])
                         continue
 
-                # Store the current song being played
+                    # Store the current song being played
+                    volume = self.guild_settings.get_music_volume()
+                else:
+                    volume = self.guild_settings.get_quote_volume()
+
+                print(f'Volume is: {volume}')
+
                 self.current = source
-                self.current.volume = self.volume
+                self.current.volume = volume
+
                 client = await self._get_client()
 
                 # If this is true, then chances are we

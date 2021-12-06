@@ -1,9 +1,8 @@
 from discord.ext import commands
 from ..helpers import DatabaseManager, TTSManager
-from ..utils import smart_print
-from dotenv import load_dotenv
+from ..utils import smart_print, PageEmbedManager
 
-from ..utils import PageEmbedManager
+from dotenv import load_dotenv
 
 import os
 import discord
@@ -14,18 +13,12 @@ class QuoteController(commands.Cog):
     def __init__(self, bot):
         """Initialize important information."""
         self.bot = bot
+        self.db_manager = DatabaseManager()
+        self.embed_manager = PageEmbedManager()
 
         load_dotenv()
-        db_host = os.getenv('DB_HOST')
-        db_name = os.getenv('DB_NAME')
-
-        self.db_manager = DatabaseManager(db_host, db_name)
-        self.db_manager.connect()
-
         tts_path = os.getenv('TTS_PATH')
-        self.tts_manager = TTSManager(bot, self.db_manager, filepath=tts_path)
-
-        self.embed_manager = PageEmbedManager()
+        self.tts_manager = TTSManager(bot, filepath=tts_path)
 
     def _contains_user(self, username, users):
         for user in users:
@@ -107,14 +100,18 @@ class QuoteController(commands.Cog):
                                      data=[name])
 
         user_quotes = self.db_manager.get_user_quote(ctx.guild.id, name)
+        quotes = []
 
-        user_quotes = '\n'.join(
-            f'**{_[0]}** - "{self._trim_quote(_[4])}"' for _ in user_quotes)
-        embed = discord.Embed(title=f"{user[2]}'s Quotes",
-                              color=discord.Colour.dark_teal(),
-                              description=user_quotes)
+        for quote in user_quotes:
+            quotes.append([quote[0], quote[4]])
 
-        await ctx.send(embed=embed)
+        embed = self.embed_manager.CreateEmbed(
+            title=f"{name}'s quotes",
+            description=f'There is a total of **{len(quotes)}** quotes',
+            inline=False
+        )
+        embed.add_items(quotes)
+        await self.embed_manager.send(ctx, embed)
 
     async def _get_id_quote(self, ctx, id):
         quotes = self.db_manager.get_id_quote(ctx.guild.id, id)
@@ -137,6 +134,8 @@ class QuoteController(commands.Cog):
         # First, we need to get all the users
         users = self.db_manager.get_users(ctx.guild.id)
 
+        print(users)
+
         # test_embed = MultiPageEmbed()
 
         quotes = []
@@ -145,12 +144,14 @@ class QuoteController(commands.Cog):
             # Get all the users quotes
             user_quotes = self.db_manager.get_user_quote(ctx.guild.id, user[2])
 
+            print(user_quotes)
+
             for quote in user_quotes:
                 quotes.append([f'{user[2]} - {quote[0]}', quote[4]])
 
         embed = self.embed_manager.CreateEmbed(
             title='All Quotes',
-            description=f'There is a total of {len(quotes)} quotes',
+            description=f'There is a total of **{len(quotes)}** quotes',
             color=discord.Colour.dark_teal(),
             inline=False
             )
@@ -160,17 +161,15 @@ class QuoteController(commands.Cog):
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
 
-        if not user.bot:
-
+        if not user.bot:  # Check for user emotes.  The bot does not count.
             # Get the embedable
             embedable = await self.embed_manager.check(reaction.message.id,
                                                        reaction.emoji)
+            # Does it exist?
             if embedable:
                 # Remove the user interaction
                 await reaction.remove(user)
                 await reaction.message.edit(embed=embedable)
-            else:
-                pass
 
     @commands.command(
         name="users",

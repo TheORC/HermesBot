@@ -22,12 +22,10 @@ from .databasemanager import DatabaseManager
 
 from ..utils import (get_full_info, get_quick_info,
                      resolve_video_urls, smart_print)
-from dotenv import load_dotenv
 
 import itertools
 import random
 import discord
-import os
 
 
 class AudioManager:
@@ -41,15 +39,7 @@ class AudioManager:
     def __init__(self, bot):
         self.bot = bot
         self.players = {}
-
-        load_dotenv()
-        self.db_host = os.getenv('DB_HOST')
-        self.db_name = os.getenv('DB_NAME')
-
-    def _get_database_handle(self):
-        temp = DatabaseManager(self.db_host, self.db_name)
-        temp.connect()
-        return temp
+        self.db_manager = DatabaseManager()
 
     def _get_player(self, ctx):
         """
@@ -88,10 +78,8 @@ class AudioManager:
 
     async def on_bot_join_channel(self, ctx, guild):
 
-        db_manager = self._get_database_handle()
-
-        num_quotes = db_manager.get_number_quotes(guild.id)
-        quotes = db_manager.get_all_quotes(guild.id)
+        num_quotes = self.db_manager.get_number_quotes(guild.id)
+        quotes = self.db_manager.get_all_quotes(guild.id)
 
         if(num_quotes == 0):
             return
@@ -113,21 +101,18 @@ class AudioManager:
         """
         try:
             await guild.voice_client.disconnect()
-        except AttributeError as e:
-            print(f'Unhandled error, voice disconnect: {e}')
+        except AttributeError:
             pass
 
         try:
             self.players[guild.id].audio_player.cancel()
-        except Exception as e:
-            print(f'Unhandled error, audioplayer cancel: {e}')
+        except Exception:
+            pass
 
         try:
             del self.players[guild.id]
-        except Exception as e:
-            print(f'Unhandled error, memory del: {e}')
-
-        print(self.players)
+        except Exception:
+            pass
 
     """
     The following commands are used to control an AudioPlayer

@@ -1,11 +1,12 @@
+from .databasemanager import DatabaseManager
 from .ttsworker import TTSWorker
 
 
 class TTSManager():
 
-    def __init__(self, bot, dbmanager, filepath='temp'):
+    def __init__(self, bot, filepath='temp'):
         self.bot = bot
-        self.database = dbmanager
+        self.db_manager = DatabaseManager()
 
         self.ttsworker = TTSWorker(bot, filepath)
         self.ttsworker.set_event_cb(self._tts_callback)
@@ -16,7 +17,8 @@ class TTSManager():
     def _tts_callback(self, results):
         if results['error'] is False:
             print(results)
-            self.database.add_tts_to_quote(results['id'], results['filename'])
+            self.db_manager.add_tts_to_quote(
+                results['id'], results['filename'])
         else:
             print(f'Error creating TSS: {results}')
 
