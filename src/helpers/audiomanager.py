@@ -348,18 +348,13 @@ class AudioManager:
 
         vc = ctx.voice_client
 
-        if(not vc or not vc.is_connected()):
-            return await smart_print(ctx, 'The bot is not playing anything.')
+        if(vc and vc.is_connected()):
+            player = self._get_player(ctx)
 
-        if(not 0 < volume <= 100):
-            return await smart_print(ctx, 'Enter a value between 1 and 100')
+            # If we are playing a song at the moment,
+            # we should also change the voluem.
+            if(vc.source):
+                vc.source.volume = volume / 100
 
-        player = self._get_player(ctx)
-
-        # If we are playing a song at the moment,
-        # we should also change the voluem.
-        if(vc.source):
-            vc.source.volume = volume / 100
-
-        player.volume = volume / 100
-        await smart_print(ctx, 'Volume set to **%s%**', data=[volume])
+            player.volume = volume / 100
+        await smart_print(ctx, 'Music volume set to **%s%**', data=[volume])

@@ -21,5 +21,7 @@ from .audiomanager import AudioManager
 from .audioplayer import AudioPlayer
 from .databasemanager import DatabaseManager
 from .ttsmanager import TTSManager
+from .guildsettings import GuildSettings
 
-__all__ = ['AudioManager', 'AudioPlayer', 'DatabaseManager', 'TTSManager']
+__all__ = ['AudioManager', 'AudioPlayer', 'DatabaseManager',
+           'TTSManager', 'GuildSettings']

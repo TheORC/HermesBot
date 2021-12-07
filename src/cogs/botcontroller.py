@@ -19,7 +19,7 @@ limitations under the License.
 
 from discord.ext import commands
 
-from ..helpers import AudioManager
+from ..helpers import AudioManager, GuildSettings
 from ..utils import smart_print
 
 import asyncio
@@ -180,10 +180,29 @@ class BotController(commands.Cog):
     async def clear_queue(self, ctx):
         await self.audio_manager.clear_queue(ctx)
 
-    @commands.command(name='volume', aliases=['vol'],
-                      help='- <[1-100]: int> Sets the volume.')
-    async def set_volume(self, ctx, volume: float):
+    @commands.command(name='music_volume', aliases=['mvol'],
+                      help='- <[1-100]: int> Sets the volume for music.')
+    async def set_music_volume(self, ctx, volume: float):
+
+        if volume < 0 or volume > 100:
+            return await smart_print(ctx, 'The volume needs to be in the range of 1-100.')  # noqa
+
+        guild_settings = GuildSettings(ctx.guild.id)
+        guild_settings.save_music_volume(volume/100)
+
         await self.audio_manager.set_volume(ctx, volume)
+
+    @commands.command(name='quote_volume', aliases=['qvol'],
+                      help='- <[1-100]: int> Sets the volume for quotes.')
+    async def set_quote_volume(self, ctx, volume: float):
+
+        if volume < 0 or volume > 100:
+            return await smart_print(ctx, 'The volume needs to be in the range of 1-100.')  # noqa
+
+        guild_settings = GuildSettings(ctx.guild.id)
+        guild_settings.save_quote_volume(volume/100)
+
+        await smart_print(ctx, 'Quote volume set to **%s%**', data=[volume])
 
 
 def setup(bot):
