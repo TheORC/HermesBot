@@ -91,7 +91,7 @@ class DatabaseManager:
         return self._sql_execute(sql, data=data)
 
     def get_id_quote(self, guildid, id):
-        sql = 'SELECT * FROM user_quotes WHERE idquote=%s AND idguild=%s'  # noqa
+        sql = 'SELECT * FROM quotes WHERE idquote=%s AND idguild=%s'  # noqa
         data = (id, guildid)
         return self._sql_execute(sql, data=data)
 

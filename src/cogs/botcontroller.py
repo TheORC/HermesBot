@@ -38,7 +38,7 @@ class BotController(commands.Cog):
     @commands.command(name='connect',
                       aliases=['join'],
                       help="- Call bot to your voice channel.")
-    async def player_connect(self, ctx):
+    async def player_connect(self, ctx, play_quote: bool = True):
 
         try:
             channel = ctx.author.voice.channel
@@ -73,7 +73,9 @@ class BotController(commands.Cog):
             except asyncio.TimeoutError:
                 return await smart_print(ctx, 'Connecting to channel: <%s> timed out.', data=[channel])  # noqa
 
-        await self.audio_manager.on_bot_join_channel(ctx, ctx.guild)
+        if play_quote:
+            await self.audio_manager.on_bot_join_channel(ctx, ctx.guild)
+
         await smart_print(ctx, 'Connected to: **%s**', data=[channel])
 
     @commands.command(name='disconnect',
@@ -91,6 +93,7 @@ class BotController(commands.Cog):
 
     @commands.command(
         name="play",
+        aliases=['p'],
         help="- <url:string | search:string> : Adds a song to the queue."
     )
     async def play_song(self, ctx, *, search: str = None):
@@ -119,6 +122,19 @@ class BotController(commands.Cog):
 
         # No resume.  This is a new song request.
         await self.audio_manager.play(ctx, search)
+
+    @commands.command(
+        name='play_quote',
+        aliases=['pq'],
+        description='- <ID:int> : Plays a quote with the specified ID.'
+    )
+    async def play_quote(self, ctx, id: int):
+        await ctx.invoke(self.player_connect, play_quote=False)
+
+        if id is None:
+            return await smart_print(ctx, 'Command missing arguments. Use .help for additional information.')  # noqa
+
+        await self.audio_manager.play_quote(ctx, id)
 
     @commands.command(name="playnext",
                       aliases=['pn'],

@@ -191,6 +191,20 @@ class AudioManager:
 
             await player.queue.put(items, index=play_index)
 
+    async def play_quote(self, ctx, id):
+
+        quote = self.db_manager.get_id_quote(ctx.guild.id, id)
+
+        if len(quote) == 0:
+            return await smart_print(ctx, 'No quote with the provided ID found.')  # noqa
+
+        quote = quote[0]
+        print(quote)
+
+        # Get the channel we are playing in
+        player = self._get_player(ctx)
+        await player.queue.put(FileSource.create_source(ctx, quote[5]))
+
     async def pause(self, ctx):
         """
         Pauses an `AudioPlayer()` if it is in a voice channel.

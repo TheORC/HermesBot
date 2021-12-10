@@ -15,7 +15,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
+from discord import Intents
 from dotenv import load_dotenv
+
 
 import src
 import os
@@ -28,7 +30,7 @@ def Main():
     token = os.getenv('DISCORD_TOKEN')
 
     # Create the client
-    bot = src.HermesClient(command_prefix='.')
+    bot = src.HermesClient(command_prefix='.', intents=Intents.default())
 
     # Load our cogs
     bot.register_cogs()
