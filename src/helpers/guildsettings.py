@@ -13,7 +13,7 @@ class GuildSettings:
         self._playlist = None
         self.db_manager = DatabaseManager()
 
-        self._load_settings()
+        # self._load_settings()
 
     def _load_settings(self):
 

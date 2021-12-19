@@ -8,6 +8,7 @@ import os
 class DatabaseManager:
 
     def __init__(self, host=None, dbname=None, port=None):
+
         self.port = port
         self._import_login_details(host, dbname)
 
@@ -15,6 +16,7 @@ class DatabaseManager:
         self._disconnect()
 
     def _import_login_details(self, host, dbname):
+
         load_dotenv()
 
         self.host = host

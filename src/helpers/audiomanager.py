@@ -198,6 +198,7 @@ class AudioManager:
         if len(quote) == 0:
             return await smart_print(ctx, 'No quote with the provided ID found.')  # noqa
 
+        # TODO: Fix an issue when a quote with no TTSD is attempted to be TTS'd
         quote = quote[0]
         print(quote)
 

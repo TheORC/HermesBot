@@ -73,8 +73,8 @@ class BotController(commands.Cog):
             except asyncio.TimeoutError:
                 return await smart_print(ctx, 'Connecting to channel: <%s> timed out.', data=[channel])  # noqa
 
-        if play_quote:
-            await self.audio_manager.on_bot_join_channel(ctx, ctx.guild)
+        # if play_quote:
+        #    await self.audio_manager.on_bot_join_channel(ctx, ctx.guild)
 
         await smart_print(ctx, 'Connected to: **%s**', data=[channel])
 
@@ -134,7 +134,7 @@ class BotController(commands.Cog):
         if id is None:
             return await smart_print(ctx, 'Command missing arguments. Use .help for additional information.')  # noqa
 
-        await self.audio_manager.play_quote(ctx, id)
+        # await self.audio_manager.play_quote(ctx, id)
 
     @commands.command(name="playnext",
                       aliases=['pn'],
