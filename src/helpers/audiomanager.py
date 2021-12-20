@@ -18,7 +18,8 @@ limitations under the License.
 '''
 
 from .audioplayer import AudioPlayer, FileSource
-from .databasemanager import DatabaseManager
+from .guildsettings import GuildSettings
+from ..database import hermes_database
 
 from ..utils import (get_full_info, get_quick_info,
                      resolve_video_urls, smart_print)
@@ -39,9 +40,9 @@ class AudioManager:
     def __init__(self, bot):
         self.bot = bot
         self.players = {}
-        self.db_manager = DatabaseManager()
+        self.db_manager = hermes_database()
 
-    def _get_player(self, ctx):
+    async def _get_player(self, ctx):
         """
         Get the `AudioPlayer()` currently in a guild. If one
         does not exsist, a new one is created.
@@ -53,7 +54,17 @@ class AudioManager:
         try:
             player = self.players[ctx.guild.id]
         except KeyError:
-            player = AudioPlayer(ctx)
+
+            db_settings = await self.db_manager.get_guild_settings(ctx.guild.id)  # noqa
+
+            if len(db_settings) > 0:
+                db_settings = db_settings[0]
+                guild_settings = GuildSettings(
+                    db_settings[1], db_settings[2], db_settings[3])
+            else:
+                guild_settings = GuildSettings()
+
+            player = AudioPlayer(ctx, guild_settings)
             self.players[ctx.guild.id] = player
         return player
 
@@ -78,19 +89,24 @@ class AudioManager:
 
     async def on_bot_join_channel(self, ctx, guild):
 
-        num_quotes = self.db_manager.get_number_quotes(guild.id)
-        quotes = self.db_manager.get_all_quotes(guild.id)
+        quotes = await self.db_manager.get_guild_quotes(guild.id)
 
-        if(num_quotes == 0):
+        if(len(quotes) == 0):
             return
 
-        id = random.randrange(0, num_quotes)
+        id = random.randrange(0, len(quotes))
 
         # Get the channel we are playing in
-        player = self._get_player(ctx)
+        player = await self._get_player(ctx)
+
+        print('Time to play a quote!')
+        print(quotes[id])
+
+        quote = quotes[id]
+        filename = f'{quote[0]}_{quote[3]}_{quote[1]}'
 
         # Add the random quote to the queue
-        await player.queue.put(FileSource.create_source(ctx, quotes[id][5]))
+        await player.queue.put(FileSource.create_source(ctx, filename))
 
     async def clear_audio_player(self, guild):
         """
@@ -132,7 +148,7 @@ class AudioManager:
         """
 
         # Get the channel we are playing in
-        player = self._get_player(ctx)
+        player = await self._get_player(ctx)
 
         # Get the quick YouTube information from the search provided.
         results = get_quick_info(search)
@@ -193,7 +209,7 @@ class AudioManager:
 
     async def play_quote(self, ctx, id):
 
-        quote = self.db_manager.get_id_quote(ctx.guild.id, id)
+        quote = await self.db_manager.get_quote_from_id(ctx.guild.id, id)
 
         if len(quote) == 0:
             return await smart_print(ctx, 'No quote with the provided ID found.')  # noqa
@@ -203,7 +219,7 @@ class AudioManager:
         print(quote)
 
         # Get the channel we are playing in
-        player = self._get_player(ctx)
+        player = await self._get_player(ctx)
         await player.queue.put(FileSource.create_source(ctx, quote[5]))
 
     async def pause(self, ctx):
@@ -263,7 +279,7 @@ class AudioManager:
             return await smart_print(ctx, 'The bot is not playing anything.')
 
         # Get the AudioPlayer() for the current user
-        player = self._get_player(ctx)
+        player = await self._get_player(ctx)
 
         # Check if the AudioPlayer() is playing anything
         if not player.current:
@@ -290,7 +306,7 @@ class AudioManager:
         if not vc or not vc.is_connected():
             return await smart_print(ctx, 'The bot is not playing anything.')
 
-        player = self._get_player(ctx)
+        player = await self._get_player(ctx)
 
         # Check if there is songs in the queue
         if player.queue.empty():
@@ -331,7 +347,7 @@ class AudioManager:
         if(not vc or not vc.is_connected()):
             return await smart_print(ctx, 'The bot is not playing anything.')
 
-        player = self._get_player(ctx)
+        player = await self._get_player(ctx)
 
         # We dont do anything if there are no songs
         if(player.queue.empty()):
@@ -350,7 +366,7 @@ class AudioManager:
         if(not vc or not vc.is_connected()):
             return await smart_print(ctx, 'The bot is not playing anything.')
 
-        player = self._get_player(ctx)
+        player = await self._get_player(ctx)
 
         if(player.queue.empty()):
             return await smart_print(ctx, 'The queue is empty.')
@@ -364,7 +380,7 @@ class AudioManager:
         vc = ctx.voice_client
 
         if(vc and vc.is_connected()):
-            player = self._get_player(ctx)
+            player = await self._get_player(ctx)
 
             # If we are playing a song at the moment,
             # we should also change the voluem.

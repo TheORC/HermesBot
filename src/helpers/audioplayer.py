@@ -26,7 +26,6 @@ import asyncio
 
 from async_timeout import timeout
 from functools import partial
-from .guildsettings import GuildSettings
 from ..utils import CustomQueue, get_full_info, smart_print
 
 
@@ -95,8 +94,9 @@ class AudioPlayer:
     the next song, or discconect.
     """
 
-    def __init__(self, ctx):
+    def __init__(self, ctx, guild_settings):
         self.ctx = ctx
+        self.guild_settings = guild_settings
         self.bot = ctx.bot
         self._guild = ctx.guild
         self._channel = ctx.channel
@@ -108,8 +108,6 @@ class AudioPlayer:
 
         self.volume = .05  # 5% seams like a nice starting point.
         self.audio_player = self.bot.loop.create_task(self.player_loop())
-
-        self.guild_settings = GuildSettings(self._guild.id)
 
     async def _get_client(self):
         """

@@ -1,4 +1,4 @@
-from .databasemanager import DatabaseManager
+from ..database import hermes_database
 from .ttsworker import TTSWorker
 
 
@@ -6,7 +6,7 @@ class TTSManager():
 
     def __init__(self, bot, filepath='temp'):
         self.bot = bot
-        self.db_manager = DatabaseManager()
+        self.db_manager = hermes_database()
 
         self.ttsworker = TTSWorker(bot, filepath)
         self.ttsworker.set_event_cb(self._tts_callback)
@@ -21,6 +21,9 @@ class TTSManager():
                 results['id'], results['filename'])
         else:
             print(f'Error creating TSS: {results}')
+
+    async def check_broken_tts(self, ctx, guildid):
+        pass
 
     # Add tts message to be proccessed
     async def quote_to_tts(self, quoteid, quote, filename):

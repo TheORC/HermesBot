@@ -18,6 +18,8 @@ limitations under the License.
 from discord import Intents
 from dotenv import load_dotenv
 
+from src.database import connect_database
+
 
 import src
 import os
@@ -31,6 +33,7 @@ def Main():
 
     # Create the client
     bot = src.HermesClient(command_prefix='.', intents=Intents.default())
+    database = connect_database(bot)
 
     # Load our cogs
     bot.register_cogs()

@@ -203,9 +203,7 @@ class BotController(commands.Cog):
         if volume < 0 or volume > 100:
             return await smart_print(ctx, 'The volume needs to be in the range of 1-100.')  # noqa
 
-        guild_settings = GuildSettings(ctx.guild.id)
-        guild_settings.save_music_volume(volume/100)
-
+        await GuildSettings.save_music_volume(ctx.guild.id, volume/100)
         await self.audio_manager.set_volume(ctx, volume)
 
     @commands.command(name='quote_volume', aliases=['qvol'],
@@ -215,9 +213,7 @@ class BotController(commands.Cog):
         if volume < 0 or volume > 100:
             return await smart_print(ctx, 'The volume needs to be in the range of 1-100.')  # noqa
 
-        guild_settings = GuildSettings(ctx.guild.id)
-        guild_settings.save_quote_volume(volume/100)
-
+        await GuildSettings.save_quote_volume(ctx.guild.id, volume/100)
         await smart_print(ctx, 'Quote volume set to **%s%**', data=[volume])
 
 

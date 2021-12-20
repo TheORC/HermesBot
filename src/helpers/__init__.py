@@ -17,11 +17,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
+from .guildsettings import GuildSettings
+from .quotemanager import QuoteManager
+from .ttsmanager import TTSManager
 from .audiomanager import AudioManager
 from .audioplayer import AudioPlayer
-from .databasemanager import DatabaseManager
-from .ttsmanager import TTSManager
-from .guildsettings import GuildSettings
 
-__all__ = ['AudioManager', 'AudioPlayer', 'DatabaseManager',
-           'TTSManager', 'GuildSettings']
+
+__all__ = [
+
+    # Classes
+    'AudioManager', 'AudioPlayer',
+    'TTSManager',
+    'GuildSettings',
+    'QuoteManager'
+    ]
