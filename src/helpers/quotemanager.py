@@ -128,7 +128,7 @@ class QuoteManager:
 
         if len(user_quotes) == 0:
             return await smart_print(ctx, 'The user **%s** has no quotes.',
-            data=[username])
+                                     data=[username])
 
         quotes = []
 

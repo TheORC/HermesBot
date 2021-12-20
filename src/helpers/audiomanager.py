@@ -23,6 +23,7 @@ from ..database import hermes_database
 
 from ..utils import (get_full_info, get_quick_info,
                      resolve_video_urls, smart_print)
+from functools import partial
 
 import itertools
 import random
@@ -151,7 +152,8 @@ class AudioManager:
         player = await self._get_player(ctx)
 
         # Get the quick YouTube information from the search provided.
-        results = get_quick_info(search)
+        to_run = partial(get_quick_info, search)
+        results = await self.bot.loop.run_in_executor(None, to_run)
 
         if results is False:
             await smart_print(ctx, 'No song with the search `%s` found.'
@@ -191,7 +193,8 @@ class AudioManager:
             # Handle casses when single url, or a search was provided.
             # If a search was provided, we need to do a full video process to
             # find out which song YouTube think the user asked for.
-            results = get_full_info(search)
+            to_run = partial(get_full_info, search)
+            results = await self.bot.loop.run_in_executor(None, to_run)
 
             # Check if a list of videos were returned.
             if('entries' in results):
@@ -388,4 +391,5 @@ class AudioManager:
                 vc.source.volume = volume / 100
 
             player.volume = volume / 100
+        await smart_print(ctx, 'Music volume set to **%s%**', data=[volume])
         await smart_print(ctx, 'Music volume set to **%s%**', data=[volume])
