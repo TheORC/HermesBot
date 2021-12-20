@@ -125,6 +125,10 @@ class QuoteManager:
                                      data=[username])
 
         user_quotes = await self.db.get_user_quotes(ctx.guild.id, username)
+
+        if len(user_quotes) == 0:
+            return await smart_print(ctx, 'The user **%s** has no quotes.')
+
         quotes = []
 
         for quote in user_quotes:
@@ -163,6 +167,9 @@ class QuoteManager:
         """
         # First, we need to get all the users
         all_quotes = await self.db.get_guild_quotes(ctx.guild.id)
+
+        if len(all_quotes) == 0:
+            return await smart_print(ctx, 'There are currently **0** quotes.')
 
         quotes = []
         for q in all_quotes:
