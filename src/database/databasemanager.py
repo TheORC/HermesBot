@@ -16,6 +16,9 @@ class DatabaseQuery:
     SELECT_QUOTE_USER = 'SELECT * FROM user_quotes WHERE idguild=%s AND username=%s'  # noqa
     SELECT_QUOTE_ID = 'SELECT * FROM user_quotes WHERE idguild=%s AND idquote=%s'  # noqa
 
+    SELECT_GUILD_TTS = 'SELECT idquote, file_name FROM quotes as q INNER JOIN tts_file_references as t ON q.idquote = t.quote_id WHERE q.idguild = %s'  # noqa
+    SELECT_ID_TTS = 'SELECT * FROM tts_file_references WHERE quote_id=%s'
+
     SELECT_NULL_TTS = 'SELECT * FROM quotes WHERE quote_tts IS NULL AND idguild=%s'  # noqa
     SELECT_QUOTE_COUNT = 'SELECT COUNT(*) from quotes WHERE idguild=%s'
 
@@ -28,9 +31,9 @@ class DatabaseUpdate:
 
     INSERT_GUILD_USER = 'INSERT INTO users (idguild, username) VALUES (%s, %s)'
     INSERT_GUILD_QUOTE = 'INSERT INTO quotes (idguild, iduser, quote_data, quote_date) VALUES (%s, %s, %s, %s)'  # noqa
+    INSERT_TTS_FILE = 'INSERT INTO tts_file_references (quote_id, file_name) VALUES (%s, %s)'  # noqa
 
     DELETE_GUILD_QUOTE = 'DELETE FROM quotes WHERE idguild=%s AND idquote=%s'  # noqa
-    TEST = 'UPDATE quotes SET quote_tts=%s WHERE idquote=%s'
 
     REMOVE_QUOTE_USER = 'UPDATE quotes SET iduser=-1 WHERE idguild=%s AND iduser=%s'  # noqa
     DELETE_GUILD_USER = 'DELETE FROM users WHERE idguild=%s AND iduser=%s'
@@ -38,7 +41,7 @@ class DatabaseUpdate:
 
 class DatabaseManager:
 
-    def __init__(self, bot):  # noqa
+    def __init__(self, loop):  # noqa
 
         # Load environment details
         load_dotenv()
@@ -49,7 +52,7 @@ class DatabaseManager:
         self.user = os.getenv('DB_USER')
         self.passw = os.getenv('DB_PASS')
 
-        self.bot = bot
+        self.loop = loop
 
         # Create the connection pool
         self._create_pool()
@@ -94,18 +97,18 @@ class DatabaseManager:
         """
 
         # Get a connection from the pool
-        connection = await self.bot.loop.run_in_executor(None, self._get_connection)  # noqa
+        connection = await self.loop.run_in_executor(None, self._get_connection)  # noqa
         cursor = connection.cursor()
 
         # Perform the query to the database
         to_run = partial(self._perform_execute, cursor, query, data)
-        await self.bot.loop.run_in_executor(None, to_run)
+        await self.loop.run_in_executor(None, to_run)
 
         # Get values
         try:
             values = cursor.fetchall()
         except InterfaceError:
-            values = None
+            values = cursor.lastrowid
 
         # Release the connection back to the pool
         cursor.close()
@@ -138,7 +141,7 @@ class DatabaseManager:
         now = datetime.datetime.utcnow()
         formated = now.strftime('%Y-%m-%d %H:%M:%S')
 
-        await self._execute(
+        return await self._execute(
             DatabaseUpdate.INSERT_GUILD_QUOTE,
             data=(guildid, userid, quote, formated,)
         )
@@ -147,6 +150,12 @@ class DatabaseManager:
         await self._execute(
             DatabaseUpdate.DELETE_GUILD_QUOTE,
             data=(guildid, quoteid,)
+        )
+
+    async def add_tts_file(self, quoteid, filename):
+        await self._execute(
+            DatabaseUpdate.INSERT_TTS_FILE,
+            data=(quoteid, filename,)
         )
 
     async def get_user_quotes(self, guildid, username):
@@ -165,6 +174,18 @@ class DatabaseManager:
         return await self._execute(
             DatabaseQuery.SELECT_QUOTES_GUILD,
             data=(guildid,)
+        )
+
+    async def get_guild_tts(self, guildid):
+        return await self._execute(
+            DatabaseQuery.SELECT_GUILD_TTS,
+            data=(guildid,)
+        )
+
+    async def get_id_tts(self, quoteid):
+        return await self._execute(
+            DatabaseQuery.SELECT_ID_TTS,
+            data=(quoteid,)
         )
 
     async def get_guild_settings(self, guilid):

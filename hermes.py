@@ -20,12 +20,13 @@ from dotenv import load_dotenv
 
 from src.database import connect_database
 
+from src.tts import shutdown_worker
 
 import src
 import os
 
 
-def Main():
+def main():
 
     # Load env variables
     load_dotenv()
@@ -33,14 +34,15 @@ def Main():
 
     # Create the client
     bot = src.HermesClient(command_prefix='.', intents=Intents.default())
-    database = connect_database(bot)
+    connect_database(bot)
 
     # Load our cogs
     bot.register_cogs()
 
     # Start the bot
     bot.run(token)
+    shutdown_worker()
 
 
 if __name__ == "__main__":
-    Main()
+    main()

@@ -1,6 +1,9 @@
 from ..database import hermes_database
 from ..utils import smart_print, PageEmbedManager
 
+from ..tts import tts_init, shutdown_worker
+from ..tts import TTSJob
+
 import discord
 
 
@@ -11,6 +14,11 @@ class QuoteManager:
         self.bot = bot
         self.db = hermes_database()
         self.em = PageEmbedManager()
+
+        self.tts_manager = tts_init()
+
+    def __del__(self):
+        shutdown_worker()
 
     def _contains_user(self, list, username):
         """
@@ -93,11 +101,18 @@ class QuoteManager:
 
         try:
             # Send the quote to the database
-            await self.db.add_user_quote(ctx.guild.id, user[0], args)
+            quote_id = await self.db.add_user_quote(ctx.guild.id, user[0], args)
             await smart_print(ctx, 'Added quote for the user **%s**.',  # noqa
                               data=[user[2]])
+
+            filename = f'{quote_id}_{ctx.guild.id}_{user[0]}'
+            job = TTSJob(quote_id, args, filename)
+            self.tts_manager.add_job(job)
+
         except Exception:
             await smart_print(ctx, 'Unable to create due to an unknown error.')
+
+        # job = TTSJob(args, f'{user[0]}_{ctx.guild.id}_{}')
 
     async def remove_user_quote(self, ctx, quoteid):
 

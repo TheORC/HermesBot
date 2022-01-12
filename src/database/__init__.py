@@ -7,10 +7,10 @@ _DATABASE_HOLDER = {'db': None}
 
 def connect_database(bot):
     if _DATABASE_HOLDER['db'] is None:
-        _DATABASE_HOLDER['db'] = DatabaseManager(bot)
+        _DATABASE_HOLDER['db'] = DatabaseManager(bot.loop)
     else:
         raise Exception(
-              'Database has already been initalized.  This can only be done once!')
+              'Database has already been initalized.  This can only be done once!')  # noqa
 
 
 def hermes_database():
@@ -26,4 +26,4 @@ __all__ = [
 
     # Methods
     'connect_database', 'hermes_database'
-    ]
+]

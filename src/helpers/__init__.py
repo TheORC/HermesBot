@@ -19,7 +19,6 @@ limitations under the License.
 
 from .guildsettings import GuildSettings
 from .quotemanager import QuoteManager
-from .ttsmanager import TTSManager
 from .audiomanager import AudioManager
 from .audioplayer import AudioPlayer
 
@@ -28,7 +27,6 @@ __all__ = [
 
     # Classes
     'AudioManager', 'AudioPlayer',
-    'TTSManager',
     'GuildSettings',
     'QuoteManager'
     ]

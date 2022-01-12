@@ -90,7 +90,7 @@ class AudioManager:
 
     async def on_bot_join_channel(self, ctx, guild):
 
-        quotes = await self.db_manager.get_guild_quotes(guild.id)
+        quotes = await self.db_manager.get_guild_tts(guild.id)
 
         if(len(quotes) == 0):
             return
@@ -104,7 +104,7 @@ class AudioManager:
         print(quotes[id])
 
         quote = quotes[id]
-        filename = f'{quote[0]}_{quote[3]}_{quote[1]}'
+        filename = quote[1]
 
         # Add the random quote to the queue
         await player.queue.put(FileSource.create_source(ctx, filename))
@@ -212,7 +212,7 @@ class AudioManager:
 
     async def play_quote(self, ctx, id):
 
-        quote = await self.db_manager.get_quote_from_id(ctx.guild.id, id)
+        quote = await self.db_manager.get_id_tts(id)
 
         if len(quote) == 0:
             return await smart_print(ctx, 'No quote with the provided ID found.')  # noqa
@@ -223,7 +223,7 @@ class AudioManager:
 
         # Get the channel we are playing in
         player = await self._get_player(ctx)
-        await player.queue.put(FileSource.create_source(ctx, quote[5]))
+        await player.queue.put(FileSource.create_source(ctx, quote[1]))
 
     async def pause(self, ctx):
         """
@@ -391,5 +391,4 @@ class AudioManager:
                 vc.source.volume = volume / 100
 
             player.volume = volume / 100
-        await smart_print(ctx, 'Music volume set to **%s%**', data=[volume])
         await smart_print(ctx, 'Music volume set to **%s%**', data=[volume])
