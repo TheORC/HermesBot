@@ -19,7 +19,7 @@ class DatabaseQuery:
     SELECT_GUILD_TTS = 'SELECT idquote, file_name FROM quotes as q INNER JOIN tts_file_references as t ON q.idquote = t.quote_id WHERE q.idguild = %s'  # noqa
     SELECT_ID_TTS = 'SELECT * FROM tts_file_references WHERE quote_id=%s'
 
-    SELECT_NULL_TTS = 'SELECT * FROM quotes WHERE quote_tts IS NULL AND idguild=%s'  # noqa
+    SELECT_NULL_TTS = 'SELECT * FROM quotes WHERE idquote NOT IN (SELECT quote_id FROM tts_file_references);'  # noqa
     SELECT_QUOTE_COUNT = 'SELECT COUNT(*) from quotes WHERE idguild=%s'
 
 
@@ -170,10 +170,6 @@ class DatabaseManager:
         )
 
     async def add_tts_file(self, quoteid, filename):
-
-        print(quoteid)
-        print(filename)
-
         return await self._execute(
             DatabaseUpdate.INSERT_TTS_FILE,
             data=(quoteid, filename,)
@@ -213,6 +209,11 @@ class DatabaseManager:
         return await self._execute(
             DatabaseQuery.SELECT_GUILD_SETTINGS,
             data=(guilid,)
+        )
+
+    async def get_missing_tts(self):
+        return await self._execute(
+            DatabaseQuery.SELECT_NULL_TTS
         )
 
     async def save_song_volume(self, guildid, svol):

@@ -13,6 +13,9 @@ class TTSJob():
         self.filename = filename
         self.full_name = f'tts_files/{self.filename}.mp3'
 
+    def __str__(self):
+        return f'Job: {self.id}-{self.filename} -> "{self.text}"'
+
     def _create_engine(self):
         """
         Create the TTS object
