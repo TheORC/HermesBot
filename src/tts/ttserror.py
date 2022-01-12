@@ -10,12 +10,15 @@ class TTSError(Exception):
 
 
 class TTSNetworkError(TTSError):
-    pass
+    def __str__(self):
+        return f'TTSNetworkError: {self.message} -> {self.error}'
 
 
 class TTSFileError(TTSError):
-    pass
+    def __str__(self):
+        return f'TTSFileError: {self.message} -> {self.error}'
 
 
 class TTSDatabaseError(TTSError):
-    pass
+    def __str__(self):
+        return f'TTSDatabaseError: {self.message} -> {self.error}'

@@ -46,4 +46,5 @@ class TTSJob():
         # Store the file
         self._save_file(tts)
 
+        # Store the file in the database
         await self._store_in_database(database)
