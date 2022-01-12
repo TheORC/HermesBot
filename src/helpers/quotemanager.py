@@ -102,8 +102,8 @@ class QuoteManager:
         try:
             # Send the quote to the database
             quote_id = await self.db.add_user_quote(ctx.guild.id, user[0], args)
-            await smart_print(ctx, 'Added quote for the user **%s**.',  # noqa
-                              data=[user[2]])
+            await smart_print(ctx, 'Added quote for the user **%s**. %s',  # noqa
+                              data=[user[2], quote_id])
 
             filename = f'{quote_id}_{ctx.guild.id}_{user[0]}'
             job = TTSJob(quote_id, args, filename)
