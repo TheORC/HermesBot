@@ -33,8 +33,10 @@ class TTSJob():
             raise TTSFileError(e)
 
     async def _store_in_database(self, database):
+
+        await database.add_tts_file(self.id, self.filename)
         try:
-            await database.add_tts_file(self.id, self.filename)
+            pass
         except Exception as e:
             raise TTSDatabaseError(e)
 
