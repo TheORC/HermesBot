@@ -153,7 +153,11 @@ class DatabaseManager:
         )
 
     async def add_tts_file(self, quoteid, filename):
-        await self._execute(
+
+        print(quoteid)
+        print(filename)
+
+        return await self._execute(
             DatabaseUpdate.INSERT_TTS_FILE,
             data=(quoteid, filename,)
         )
