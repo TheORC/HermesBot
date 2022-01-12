@@ -1,4 +1,5 @@
 from .ttserror import TTSError
+from .ttsjob import TTSJob
 from ..database import DatabaseManager
 
 import threading
@@ -39,6 +40,17 @@ class TTSThread(threading.Thread):
 
     async def _run_task(self):
 
+        missing_tts = await self.database.get_missing_tts()
+
+        if len(missing_tts) > 0:
+            for missing in missing_tts:
+                temp_job = TTSJob(
+                    missing[0],
+                    missing[3],
+                    f'{missing[0]}_{missing[2]}_{missing[1]}'
+                    )
+                self.add_job(temp_job)
+
         while self.is_running:
 
             # Wait for a new job
@@ -46,6 +58,8 @@ class TTSThread(threading.Thread):
                 job = self.queue.get(timeout=1)
             except Exception:
                 continue
+
+            print(temp_job)
 
             # Perform the job
             try:
