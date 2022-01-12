@@ -87,6 +87,23 @@ class DatabaseManager:
         """
         cursor.execute(query, data)
 
+    async def _insert_quote(self, query, data):
+        # Get a connection from the pool
+        connection = await self.loop.run_in_executor(None, self._get_connection)  # noqa
+        cursor = connection.cursor()
+
+        # Perform the query to the database
+        to_run = partial(self._perform_execute, cursor, query, data)
+        await self.loop.run_in_executor(None, to_run)
+
+        rowid = cursor.lastrowid
+
+        # Release the connection back to the pool
+        cursor.close()
+        connection.close()
+
+        return rowid
+
     # Async call to the database
     async def _execute(self, query, data=None):
         """
@@ -141,7 +158,7 @@ class DatabaseManager:
         now = datetime.datetime.utcnow()
         formated = now.strftime('%Y-%m-%d %H:%M:%S')
 
-        return await self._execute(
+        return await self._insert_quote(
             DatabaseUpdate.INSERT_GUILD_QUOTE,
             data=(guildid, userid, quote, formated,)
         )
