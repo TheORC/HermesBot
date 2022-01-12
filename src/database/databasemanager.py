@@ -19,7 +19,7 @@ class DatabaseQuery:
     SELECT_GUILD_TTS = 'SELECT idquote, file_name FROM quotes as q INNER JOIN tts_file_references as t ON q.idquote = t.quote_id WHERE q.idguild = %s'  # noqa
     SELECT_ID_TTS = 'SELECT * FROM tts_file_references WHERE quote_id=%s'
 
-    SELECT_NULL_TTS = 'SELECT * FROM quotes WHERE idquote NOT IN (SELECT quote_id FROM tts_file_references);'  # noqa
+    SELECT_NULL_TTS = 'SELECT * FROM quotes WHERE idquote NOT IN (SELECT quote_id FROM tts_file_references)'  # noqa
     SELECT_QUOTE_COUNT = 'SELECT COUNT(*) from quotes WHERE idguild=%s'
 
 
