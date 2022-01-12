@@ -1,12 +1,9 @@
-from ..utils import CustomQueue
 from .ttserror import TTSError
-
 from ..database import DatabaseManager
-
-from async_timeout import timeout
 
 import threading
 import asyncio
+import queue
 
 
 class TTSThread(threading.Thread):
@@ -16,7 +13,7 @@ class TTSThread(threading.Thread):
         # Initialize internal elements
         super().__init__()
 
-        self.queue = CustomQueue()
+        self.queue = queue.Queue()
         self.is_running = True
         self.daemon = True
 
@@ -35,18 +32,19 @@ class TTSThread(threading.Thread):
         self.is_running = False
 
     def add_job(self, job):
-        asyncio.run_coroutine_threadsafe(self.queue.put(job), self.loop)
+        try:
+            self.queue.put(job, timeout=2)
+        except TimeoutError:
+            print('Adding job to the queue has timedout.')
 
     async def _run_task(self):
-        print('This was called!')
 
         while self.is_running:
 
             # Wait for a new job
             try:
-                async with timeout(.1):
-                    job = await self.queue.get()
-            except asyncio.TimeoutError:
+                job = self.queue.get(timeout=1)
+            except Exception:
                 continue
 
             # Perform the job
